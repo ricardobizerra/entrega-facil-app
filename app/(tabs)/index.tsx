@@ -1,11 +1,28 @@
-import { Image, StyleSheet, Platform } from 'react-native';
+import { Image, StyleSheet, Platform, Button } from 'react-native';
 
 import { HelloWave } from '@/components/HelloWave';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
+import { addDoc, collection } from 'firebase/firestore';
+import { database } from '@/config/firebaseConfig';
 
 export default function HomeScreen() {
+  async function addUser() {
+    try {
+      const docRef = await addDoc(collection(database, "users"), {
+        name: "João Silva",
+        email: "joao.silva@example.com",
+        address: "Rua das Flores, 123",
+        phone: "+5511987654321",
+        age: 18,
+      });
+      console.log("Usuário adicionado com ID: ", docRef.id);
+    } catch (e) {
+      console.error("Erro ao adicionar usuário: ", e);
+    }
+  }
+  
   return (
     <ParallaxScrollView
       headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
@@ -46,6 +63,7 @@ export default function HomeScreen() {
           <ThemedText type="defaultSemiBold">app-example</ThemedText>.
         </ThemedText>
       </ThemedView>
+      <Button title="Clique aqui" onPress={addUser} />
     </ParallaxScrollView>
   );
 }
