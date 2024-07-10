@@ -9,21 +9,31 @@ export default function RegisterScreen() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [visible, setVisible] = useState(false);
+  const [error, setError] = useState('');
+
   const router = useRouter();
 
   async function handleRegister() {
+    if (password !== confirmPassword) {
+      setError('As senhas não coincidem');
+      return;
+    }
+
     try {
       const docRef = await addDoc(collection(database, 'users'), {
         name,
         email,
         phone,
+        password, // Salvando a senha no banco (lembre-se de criptografar em um ambiente real)
       });
       setVisible(true);
       setTimeout(() => {
         setVisible(false);
         router.push('/');
-      }, 2000);
+      }, 4000);
     } catch (e: unknown) {
       if (e instanceof Error) {
         alert('Erro ao adicionar usuário: ' + e.message);
@@ -58,6 +68,23 @@ export default function RegisterScreen() {
         onChangeText={setPhone}
         keyboardType="phone-pad"
       />
+      <TextInput
+        style={styles.input}
+        placeholder="Senha"
+        placeholderTextColor="#aaa"
+        value={password}
+        onChangeText={setPassword}
+        secureTextEntry={true}
+      />
+      <TextInput
+        style={styles.input}
+        placeholder="Confirmar Senha"
+        placeholderTextColor="#aaa"
+        value={confirmPassword}
+        onChangeText={setConfirmPassword}
+        secureTextEntry={true}
+      />
+      {error ? <Text style={styles.errorText}>{error}</Text> : null}
       <TouchableOpacity style={styles.button} onPress={handleRegister}>
         <Text style={styles.buttonText}>Registrar</Text>
       </TouchableOpacity>
@@ -103,10 +130,6 @@ const styles = StyleSheet.create({
     width: '80%',
     alignItems: 'center',
   },
-  buttonText: {
-    color: '#fff',
-    fontSize: 18,
-  },
   backButton: {
     backgroundColor: '#ff6347',
     paddingVertical: 10,
@@ -116,7 +139,15 @@ const styles = StyleSheet.create({
     width: '80%',
     alignItems: 'center',
   },
+  buttonText: {
+    color: '#fff',
+    fontSize: 18,
+  },
   snackbar: {
     backgroundColor: 'green',
+  },
+  errorText: {
+    color: 'red',
+    marginBottom: 10,
   },
 });
