@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { View, TextInput, StyleSheet, TouchableOpacity, Text } from 'react-native';
-import { addDoc, collection } from 'firebase/firestore';
+import { View, TextInput, StyleSheet, TouchableOpacity, Text, Alert } from 'react-native';
+import { addDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { database } from '@/config/firebaseConfig';
 import { useRouter } from 'expo-router';
 import { Snackbar } from 'react-native-paper';
@@ -17,17 +17,34 @@ export default function RegisterScreen() {
   const router = useRouter();
 
   async function handleRegister() {
+    if (!name || !email || !phone || !password || !confirmPassword) {
+        setError('Por favor, preencha todos os campos');
+        return;
+      }
+    
     if (password !== confirmPassword) {
       setError('As senhas não coincidem');
+      setTimeout(() => setError(''), 4000);
+      return;
+    }
+
+    // Verificar se o email já está em uso
+    const usersRef = collection(database, 'users');
+    const q = query(usersRef, where('email', '==', email));
+    const querySnapshot = await getDocs(q);
+
+    if (!querySnapshot.empty) {
+      setError('Este email já está sendo usado por outro usuário');
+      setTimeout(() => setError(''), 2000);
       return;
     }
 
     try {
-      const docRef = await addDoc(collection(database, 'users'), {
+      const docRef = await addDoc(usersRef, {
         name,
         email,
         phone,
-        password, // Salvando a senha no banco (lembre-se de criptografar em um ambiente real)
+        password,
       });
       setVisible(true);
       setTimeout(() => {
