@@ -33,7 +33,7 @@ export default function RegisterScreen() {
       setTimeout(() => {
         setVisible(false);
         router.push('/');
-      }, 4000);
+      }, 2000);
     } catch (e: unknown) {
       if (e instanceof Error) {
         alert('Erro ao adicionar usuário: ' + e.message);

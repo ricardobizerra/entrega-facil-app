@@ -12,7 +12,7 @@ export default function HomeScreen() {
         <Text style={styles.title}>Welcome!</Text>
         <TouchableOpacity
           style={styles.button}
-          onPress={() => router.push('/')}
+          onPress={() => router.push('/LoginScreen')}
         >
           <Text style={styles.buttonText}>Login</Text>
         </TouchableOpacity>
