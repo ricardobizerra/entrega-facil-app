@@ -6,6 +6,9 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { addDoc, collection } from 'firebase/firestore';
 import { database } from '@/config/firebaseConfig';
+import { Link } from "expo-router";
+import { Pressable, Text } from "react-native";
+
 
 export default function HomeScreen() {
   async function addUser() {
@@ -64,6 +67,9 @@ export default function HomeScreen() {
         </ThemedText>
       </ThemedView>
       <Button title="Clique aqui" onPress={addUser} />
+      <Link push href="/history" asChild>
+        <Button title="Historico" />
+      </Link>
     </ParallaxScrollView>
   );
 }
