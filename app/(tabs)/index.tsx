@@ -1,6 +1,16 @@
 import React from 'react';
 import { View, Image, StyleSheet, TouchableOpacity, Text } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Image, StyleSheet, Platform, Button } from 'react-native';
+
+import { HelloWave } from '@/components/HelloWave';
+import ParallaxScrollView from '@/components/ParallaxScrollView';
+import { ThemedText } from '@/components/ThemedText';
+import { ThemedView } from '@/components/ThemedView';
+import { addDoc, collection } from 'firebase/firestore';
+import { database } from '@/config/firebaseConfig';
+import { Link } from "expo-router";
+import { Pressable, Text } from "react-native";
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -22,6 +32,9 @@ export default function HomeScreen() {
         >
           <Text style={styles.buttonText}>Cadastrar</Text>
         </TouchableOpacity>
+        <Link push href="/history" asChild>
+          <Button title="Historico" />
+        </Link>
       </View>
     </View>
   );
