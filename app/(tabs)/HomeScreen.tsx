@@ -1,9 +1,11 @@
 import React from 'react';
-import { View, StyleSheet, Text, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, Text, TouchableOpacity, Button } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { Link } from "expo-router";
 
 export default function HomeScreen() {
   const router = useRouter();
+
   const { email, name, phone } = useLocalSearchParams();
 
   function handleLogout() {
@@ -20,6 +22,14 @@ export default function HomeScreen() {
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
         <Text style={styles.buttonText}>Logout</Text>
       </TouchableOpacity>
+      <Link href={{
+        pathname: '/history',
+        params: {
+          client_id: email,
+        },
+      }}>
+        <Button title="Historico" />
+      </Link>
     </View>
   );
 }

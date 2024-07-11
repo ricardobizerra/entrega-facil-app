@@ -3,7 +3,8 @@ import { database } from '@/config/firebaseConfig';
 import { collection, getDocs, query, where, Timestamp } from 'firebase/firestore';
 import styled from 'styled-components/native';
 import { Text, View } from 'react-native';
-import { NavigationProp } from '@react-navigation/native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+
 
 const HistoryContainer = styled(View)`
   display: flex;
@@ -39,20 +40,16 @@ interface PackageHistoryItem {
   creation_date: Timestamp;
 }
 
-interface HistoryProps {
-  navigation: NavigationProp<any>;
-}
+export default function History() {
+  const { client_id } = useLocalSearchParams<{ client_id: string }>();
 
-export default function History({ navigation }: HistoryProps) {
   const [packageHistory, setPackageHistory] = useState<PackageHistoryItem[]>([]);
 
   const fetchHistoryFromFirebase = async () => {
-    const hardCodedClientId = 'teste.da.silva@example.com';
-
     try {
       const q = query(
         collection(database, 'products'),
-        where('client_id', '==', hardCodedClientId)
+        where('client_id', '==', client_id)
       );
       const querySnapshot = await getDocs(q);
       const newEntries = querySnapshot.docs.map(doc => ({
