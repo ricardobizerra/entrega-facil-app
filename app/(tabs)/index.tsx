@@ -11,12 +11,10 @@ import { addDoc, collection } from 'firebase/firestore';
 import { database } from '@/config/firebaseConfig';
 import { Link } from "expo-router";
 import { Pressable, Text } from "react-native";
-
 export default function HomeScreen() {
   const router = useRouter();
 
-  return (
-    <View style={styles.container}>
+  return (    <View style={styles.container}>
       <Image source={require('@/assets/images/motoboy.jpg')} style={styles.backgroundImage} />
       <View style={styles.overlay}>
         <Text style={styles.title}>Welcome!</Text>
