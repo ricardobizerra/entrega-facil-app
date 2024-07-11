@@ -13,6 +13,15 @@ export default function HomeScreen() {
     router.push('/LoginScreen'); // Redirecionar para a tela de login após logout
   }
 
+  function handleHistoryPress() {
+    router.push({
+      pathname: '/history',
+      params: {
+        client_id: email,
+      },
+    });
+  }
+
   return (
     <View style={styles.container}>
       <Text style={styles.welcomeText}>Bem-vindo à Home!</Text>
@@ -22,16 +31,10 @@ export default function HomeScreen() {
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
         <Text style={styles.buttonText}>Logout</Text>
       </TouchableOpacity>
-      <Link href={{
-        pathname: '/history',
-        params: {
-          client_id: email,
-        },
-      }}>
-        <Button title="Historico" />
-      </Link>
+      <Button title="Histórico" onPress={handleHistoryPress} />
     </View>
   );
+
 }
 
 const styles = StyleSheet.create({
