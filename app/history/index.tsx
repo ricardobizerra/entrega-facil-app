@@ -66,6 +66,16 @@ export default function History() {
     router.back(); 
   }
 
+  function handleOrderDetail(item_id: string) {
+    router.push({
+      pathname: '/orderDetail',
+      params: {
+        client_id: client_id,
+        product_id: item_id,
+      },
+    });
+  }
+
   useEffect(() => {
     fetchHistoryFromFirebase();
   }, []);
@@ -74,10 +84,10 @@ export default function History() {
     <HistoryContainer>
       {packageHistory.map((item, index) => (
           <HistoryItem key={index}>
-            <HistoryText>ID: {item.id}</HistoryText>
+            <HistoryText>ID do produto: {item.id}</HistoryText>
             <HistoryText>Status: {item.status}</HistoryText>
-            <HistoryText>Client ID: {item.client_id}</HistoryText>
-            <HistoryText>Creation Date: {item.creation_date.toDate().toLocaleString()}</HistoryText>
+            <HistoryText>Data de compra: {item.creation_date.toDate().toLocaleString()}</HistoryText>
+            <Button title="Acompanhar" onPress={() => handleOrderDetail(item.id)} />
           </HistoryItem>
       ))}
       <Button title="Voltar" onPress={handleBack} />
