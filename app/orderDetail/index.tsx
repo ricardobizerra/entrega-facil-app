@@ -37,7 +37,7 @@ interface PackageOrderDetailItem {
   status: string;
   client_id: string;
   creation_date: Timestamp;
-  delivery_actions: string[]; // Assuming delivery_actions is an array of strings
+  delivery_actions: { [key: string]: { action: string; timestamp: Timestamp } };
 }
 
 export default function OrderDetail() {
@@ -50,14 +50,13 @@ export default function OrderDetail() {
     try {
       const q = query(
         collection(database, 'products'),
-        where('client_id', '==', client_id),
-        where('id', '==', product_id)
+        where('client_id', '==', client_id)
       );
       const querySnapshot = await getDocs(q);
       const newEntries = querySnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
-        delivery_actions: doc.data().delivery_actions, // Assuming delivery_actions is directly accessible from Firestore
+        delivery_actions: doc.data().delivery_actions || {} // Default to empty object if delivery_actions doesn't exist
       })) as PackageOrderDetailItem[];
       setPackageOrderDetail(newEntries);
     } catch (error) {
@@ -92,8 +91,11 @@ export default function OrderDetail() {
           {/* Rendering delivery_actions */}
           <View>
             <Text>Acompanhe seu pedido:</Text>
-            {item.delivery_actions.map((action, actionIndex) => (
-              <Text key={actionIndex}>{action}</Text>
+            {Object.keys(item.delivery_actions).map((key, actionIndex) => (
+              <View key={actionIndex}>
+                <Text>{item.delivery_actions[key].action}</Text>
+                <Text>Data: {item.delivery_actions[key].timestamp.toDate().toLocaleString()}</Text>
+              </View>
             ))}
           </View>
         </OrderDetailItem>
