@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { database } from '@/config/firebaseConfig';
 import { collection, getDocs, query, where, Timestamp } from 'firebase/firestore';
 import styled from 'styled-components/native';
-import { Text, View } from 'react-native';
+import { Text, View, Button } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
 
@@ -41,10 +41,10 @@ interface PackageHistoryItem {
 }
 
 export default function History() {
+  const router = useRouter();
   const { client_id } = useLocalSearchParams<{ client_id: string }>();
 
   const [packageHistory, setPackageHistory] = useState<PackageHistoryItem[]>([]);
-
   const fetchHistoryFromFirebase = async () => {
     try {
       const q = query(
@@ -62,6 +62,10 @@ export default function History() {
     }
   };
 
+  function handleBack() {
+    router.back(); 
+  }
+
   useEffect(() => {
     fetchHistoryFromFirebase();
   }, []);
@@ -69,13 +73,14 @@ export default function History() {
   return (
     <HistoryContainer>
       {packageHistory.map((item, index) => (
-        <HistoryItem key={index}>
-          <HistoryText>ID: {item.id}</HistoryText>
-          <HistoryText>Status: {item.status}</HistoryText>
-          <HistoryText>Client ID: {item.client_id}</HistoryText>
-          <HistoryText>Creation Date: {item.creation_date.toDate().toLocaleString()}</HistoryText>
-        </HistoryItem>
+          <HistoryItem key={index}>
+            <HistoryText>ID: {item.id}</HistoryText>
+            <HistoryText>Status: {item.status}</HistoryText>
+            <HistoryText>Client ID: {item.client_id}</HistoryText>
+            <HistoryText>Creation Date: {item.creation_date.toDate().toLocaleString()}</HistoryText>
+          </HistoryItem>
       ))}
+      <Button title="Voltar" onPress={handleBack} />
     </HistoryContainer>
   );
 }
