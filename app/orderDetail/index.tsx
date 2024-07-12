@@ -50,7 +50,8 @@ export default function OrderDetail() {
     try {
       const q = query(
         collection(database, 'products'),
-        where('client_id', '==', client_id)
+        where('client_id', '==', client_id),
+        where('id', '==', product_id)
       );
       const querySnapshot = await getDocs(q);
       const newEntries = querySnapshot.docs.map(doc => ({
