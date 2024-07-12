@@ -1,7 +1,9 @@
 import { initializeApp } from 'firebase/app';
 import { getFirestore, addDoc, collection } from 'firebase/firestore';
+import { getAuth, browserLocalPersistence  } from 'firebase/auth';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Initialize Firebase
+// Configuração do Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyBV_4gOCJLdiWalNxypWOSLgcTVw4Y1bu8",
   authDomain: "entrega-facil-cbb50.firebaseapp.com",
@@ -12,7 +14,15 @@ const firebaseConfig = {
   measurementId: "G-0KCS4D7X24"
 };
 
+// Inicializa o Firebase
 const firebaseApp = initializeApp(firebaseConfig);
+
+// Inicializa o Firestore
 export const database = getFirestore(firebaseApp);
+
+// Inicializa o Auth
+const auth = getAuth(firebaseApp);
+
+auth.setPersistence(browserLocalPersistence)
 
 export { addDoc, collection };
