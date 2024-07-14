@@ -121,6 +121,7 @@ interface PackageHistoryItem {
   status: string;
   client_id: string;
   creation_date: Timestamp;
+  arrival_date: Timestamp;
   delivery_actions: { [key: string]: { action: string; timestamp: Timestamp } };
 }
 
@@ -253,7 +254,7 @@ export default function History() {
                 <HistoryTitleText>Pedido {item.id}</HistoryTitleText>
                 <HistoryText>
                   Previsão de chegada:{' '}
-                  {format(item.creation_date.toDate(), "dd 'de' MMMM 'de' yyyy", {
+                  {format(item.arrival_date.toDate(), "dd 'de' MMMM 'de' yyyy", {
                     locale: ptBR,
                   })}
                 </HistoryText>
