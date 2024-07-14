@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, TextInput, StyleSheet, TouchableOpacity, Text, Alert } from 'react-native';
+import { View, TextInput, StyleSheet, TouchableOpacity, Text, Alert, Image } from 'react-native';
 import { getDocs, query, collection, where } from 'firebase/firestore';
 import { database } from '@/config/firebaseConfig';
 import { useRouter } from 'expo-router';
+import { FontAwesome } from '@expo/vector-icons';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -38,29 +39,40 @@ export default function LoginScreen() {
 
   return (
     <View style={styles.container}>
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        placeholderTextColor="#aaa"
-        value={email}
-        onChangeText={setEmail}
-        keyboardType="email-address"
-        autoCapitalize="none"
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Senha"
-        placeholderTextColor="#aaa"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-      />
+      <Image source={require('@/assets/images/Logo.png')} style={styles.logo} />
+      <Text style={styles.subtitle}>Login</Text>
+      <View style={styles.inputContainer}>
+        <FontAwesome name="envelope" size={24} color="black" />
+        <TextInput
+          style={styles.input}
+          placeholder="Email"
+          placeholderTextColor="#aaa"
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+          autoCapitalize="none"
+        />
+      </View>
+      <View style={styles.inputContainer}>
+        <FontAwesome name="lock" size={24} color="black" />
+        <TextInput
+          style={styles.input}
+          placeholder="Senha"
+          placeholderTextColor="#aaa"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+        />
+      </View>
       <TouchableOpacity style={styles.button} onPress={handleLogin}>
-        <Text style={styles.buttonText}>Entrar</Text>
+        <Text style={styles.buttonText}>Login</Text>
       </TouchableOpacity>
-      <TouchableOpacity style={styles.registerButton} onPress={() => router.push('/registerScreen')}>
-        <Text style={styles.buttonText}>Registrar-se</Text>
-      </TouchableOpacity>
+      <Text style={styles.registerText}>
+        Não possui conta?{' '}
+        <Text style={styles.registerLink} onPress={() => router.push('/')}>
+          Faça seu cadastro
+        </Text>
+      </Text>
     </View>
   );
 }
@@ -73,18 +85,42 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#f0f8ff',
   },
-  input: {
-    height: 40,
-    width: '80%',
+  logo: {
+    width: 210, 
+    height: 270, 
+    marginBottom: 30, 
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#FFA500',
+    marginVertical: 20,
+  },
+  subtitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#000',
+    marginBottom: 20,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     borderColor: '#ccc',
     borderWidth: 1,
     borderRadius: 5,
     marginBottom: 12,
     paddingHorizontal: 8,
     backgroundColor: '#fff',
+    width: '80%',
+    height: 40,
+  },
+  input: {
+    flex: 1,
+    paddingLeft: 10,
+    color: '#000',
   },
   button: {
-    backgroundColor: '#1e90ff',
+    backgroundColor: '#FFA500',
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 5,
@@ -96,13 +132,12 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 18,
   },
-  registerButton: {
-    backgroundColor: '#ff6347',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 5,
-    marginTop: 10,
-    width: '80%',
-    alignItems: 'center',
+  registerText: {
+    color: '#000',
+    fontSize: 14,
+  },
+  registerLink: {
+    color: '#FFA500',
+    fontWeight: 'bold',
   },
 });
