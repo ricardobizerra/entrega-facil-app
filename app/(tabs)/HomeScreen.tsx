@@ -30,7 +30,7 @@ export default function HomeScreen() {
 
   function handleLogout() {
     // Lógica para logout (pode incluir Firebase Auth signOut se necessário)
-    router.push('/LoginScreen'); // Redirecionar para a tela de login após logout
+    router.push('/loginscreen'); // Redirecionar para a tela de login após logout
   }
 
   async function getLocation() {
@@ -109,7 +109,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f0f8ff',
+    backgroundColor: '#f5f5f5',
     padding: 16,
   },
   welcomeText: {
