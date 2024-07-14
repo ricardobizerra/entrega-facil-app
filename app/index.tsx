@@ -5,6 +5,7 @@ import { database } from '@/config/firebaseConfig';
 import { useRouter } from 'expo-router';
 import { Snackbar } from 'react-native-paper';
 import { FontAwesome } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function RegisterScreen() {
   const [name, setName] = useState('');
@@ -58,11 +59,12 @@ export default function RegisterScreen() {
       // Fetch the newly created user data
       const newUserQuery = query(usersRef, where('email', '==', email));
       const newUserSnapshot = await getDocs(newUserQuery);
+      await AsyncStorage.setItem('userEmail', email);
 
       if (!newUserSnapshot.empty) {
         const newUser = newUserSnapshot.docs[0].data();
         router.push({
-          pathname: '/HomeScreen',
+          pathname: '/(tabs)/HomeScreen',
           params: newUser,
         });
       }
@@ -130,7 +132,7 @@ export default function RegisterScreen() {
       </TouchableOpacity>
       <Text style={styles.loginText}>
         Já possui uma conta?{' '}
-        <Text style={styles.loginLink} onPress={() => router.push('/LoginScreen')}>
+        <Text style={styles.loginLink} onPress={() => router.push('/loginscreen')}>
           Faça login
         </Text>
       </Text>

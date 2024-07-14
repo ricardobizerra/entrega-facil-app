@@ -3,7 +3,8 @@ import { database } from '@/config/firebaseConfig';
 import { collection, getDocs, query, where, Timestamp } from 'firebase/firestore';
 import styled from 'styled-components/native';
 import { Text, View, Button, TouchableOpacity, TextInput } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import Logo from '@/assets/images/logo-no-text.svg';
@@ -28,7 +29,7 @@ const HistoryText = styled(Text)`
   color: #3a3a3a;
   font-size: 14px;
   font-weight: 500;
-  margin-right: 10;
+  margin-right: 10px;
 `;
 
 const HistoryTitleText = styled(Text)`
@@ -65,6 +66,7 @@ const TabsContainer = styled(View)`
   flex-direction: row;
   margin-left: 30px;
   margin-bottom: 10px;
+  margin-top: 20px;
 `;
 
 interface TabTextProps {
@@ -124,16 +126,15 @@ interface PackageHistoryItem {
 
 export default function History() {
   const router = useRouter();
-  const { client_id } = useLocalSearchParams<{ client_id: string }>();
-
+  const [clientId, setClientId] = useState<string | null>(null);
   const [packageHistory, setPackageHistory] = useState<PackageHistoryItem[]>([]);
   const [selectedTab, setSelectedTab] = useState<'Em andamento' | 'Finalizado'>('Em andamento');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [filteredOrders, setFilteredOrders] = useState<PackageHistoryItem[]>([]);
 
-  const fetchHistoryFromFirebase = async () => {
+  const fetchHistoryFromFirebase = async (clientId: string) => {
     try {
-      const q = query(collection(database, 'products'), where('client_id', '==', client_id));
+      const q = query(collection(database, 'products'), where('client_id', '==', clientId));
       const querySnapshot = await getDocs(q);
       const newEntries = querySnapshot.docs.map((doc) => ({
         id: doc.id,
@@ -144,6 +145,20 @@ export default function History() {
       filterOrdersByStatus(selectedTab, newEntries); // Filter initial orders by selected tab
     } catch (error) {
       console.error('Error fetching data: ', error);
+    }
+  };
+
+  const getClientId = async () => {
+    try {
+      const clientId = await AsyncStorage.getItem('userEmail');
+      if (clientId) {
+        setClientId(clientId);
+        fetchHistoryFromFirebase(clientId);
+      } else {
+        console.log('No client ID found');
+      }
+    } catch (error) {
+      console.error('Error retrieving client ID: ', error);
     }
   };
 
@@ -164,23 +179,25 @@ export default function History() {
     orders: PackageHistoryItem[]
   ) => {
     const filtered = orders.filter((order) =>
-      status === 'Em andamento' ? order.status !== 'recebido' : order.status === 'recebido'
+      status === 'Em andamento' ? order.status !== 'received' : order.status === 'received'
     );
     setFilteredOrders(filtered);
   };
 
   const handleOrderDetail = (item_id: string) => {
-    router.push({
-      pathname: '/orderDetail',
-      params: {
-        client_id: client_id,
-        product_id: item_id,
-      },
-    });
+    if (clientId) {
+      router.push({
+        pathname: '/orderDetail',
+        params: {
+          client_id: clientId,
+          product_id: item_id,
+        },
+      });
+    }
   };
 
   useEffect(() => {
-    fetchHistoryFromFirebase();
+    getClientId();
   }, []);
 
   useEffect(() => {
