@@ -18,7 +18,7 @@ const HistoryContainer = styled(View)`
 const HistoryItem = styled(View)`
   background-color: #ffffff;
   padding: 15px;
-  margin-bottom: 10px;
+  margin-bottom: 20px;
   width: 95%;
   margin-left: 20px;
   border-radius: 20px;
