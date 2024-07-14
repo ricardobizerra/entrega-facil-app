@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, Text, TouchableOpacity, Button } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { Link } from "expo-router";
+import { Link } from "expo-router"; 
 import * as Location from 'expo-location';
 import { collection, doc, getDocs, query, updateDoc, where } from 'firebase/firestore';
 import { database } from '@/config/firebaseConfig';
@@ -35,15 +35,6 @@ export default function HomeScreen() {
   function handleLogout() {
     // Lógica para logout (pode incluir Firebase Auth signOut se necessário)
     router.push('/LoginScreen'); // Redirecionar para a tela de login após logout
-  }
-
-  function handleHistoryPress() {
-    router.push({
-      pathname: '/history',
-      params: {
-        client_id: email,
-      },
-    });
   }
 
   async function getLocation() {
@@ -103,7 +94,6 @@ export default function HomeScreen() {
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
         <Text style={styles.buttonText}>Logout</Text>
       </TouchableOpacity>
-      <Button title="Histórico" onPress={handleHistoryPress} />
 
       <Snackbar
         visible={visible}

@@ -4,6 +4,7 @@ import { getDocs, query, collection, where } from 'firebase/firestore';
 import { database } from '@/config/firebaseConfig';
 import { useRouter } from 'expo-router';
 import { FontAwesome } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -17,8 +18,12 @@ export default function LoginScreen() {
 
       if (!querySnapshot.empty) {
         const userData = querySnapshot.docs[0].data();
+        
+        // Save the user email to AsyncStorage
+        await AsyncStorage.setItem('userEmail', userData.email);
+
         router.push({
-          pathname: '/HomeScreen',
+          pathname: '/(tabs)/HomeScreen',
           params: {
             email: userData.email,
             name: userData.name,
