@@ -7,6 +7,10 @@ import { collection, doc, getDocs, query, updateDoc, where } from 'firebase/fire
 import { database } from '@/config/firebaseConfig';
 import OpenLocationCode from 'open-location-code-typescript';
 import { Snackbar } from 'react-native-paper';
+import LaUrsaSvg from '@/assets/images/la-ursa-home.svg';
+import ScooterSvg from '@/assets/images/scooter-home.svg';
+import styled from 'styled-components';
+import { LinearGradient } from 'expo-linear-gradient';
 
 interface User {
   id?: string;
@@ -86,7 +90,7 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.welcomeText}>Bem-vindo à Home!</Text>
+      {/* <Text style={styles.welcomeText}>Bem-vindo à Home!</Text>
       <Text style={styles.userInfo}>Email: {user?.email}</Text>
       <Text style={styles.userInfo}>Nome: {user?.name}</Text>
       <Text style={styles.userInfo}>Celular: {user?.phone}</Text>
@@ -108,7 +112,29 @@ export default function HomeScreen() {
         style={{ backgroundColor: 'green' }}
       >
         Localização adicionada ✅
-      </Snackbar>
+      </Snackbar> */}
+
+      <Header>
+        <Titles>
+          <Title>Olá, {user?.name?.split(' ')[0] || ''}</Title>
+          <Description>
+            Comece a receber seus pedidos em casa
+          </Description>
+        </Titles>
+
+        <LaUrsaSvg width={55} />        
+      </Header>
+
+      <SubContainer>
+        <OnboardingButton>
+          <OnboardingGradient
+            colors={['#FFF', '#DB3319']}
+          >
+            <OnboardingTitle>Etapas para usar o Tá Entregue</OnboardingTitle>
+            <ScooterSvg width={'40%'} />
+          </OnboardingGradient>
+        </OnboardingButton>
+      </SubContainer>
     </View>
   );
 
@@ -117,10 +143,7 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f0f8ff',
-    padding: 16,
+    backgroundColor: '#f2af2c',
   },
   welcomeText: {
     fontSize: 24,
@@ -159,3 +182,66 @@ const styles = StyleSheet.create({
     fontSize: 18,
   },
 });
+
+const Header = styled(View)`
+  padding: 32px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+`;
+
+const Titles = styled(View)`
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+`;
+
+const Title = styled(Text)`
+  font-size: 24px;
+  color: #000;
+  font-weight: bold;
+`;
+
+const Description = styled(Text)`
+  font-size: 12px;
+  color: #000;
+`;
+
+const SubContainer = styled(View)`
+  width: 100%;
+  height: 100%;
+  background-color: #fff;
+  border-top-left-radius: 32px;
+  border-top-right-radius: 32px;
+  padding: 32px;
+  margin-top: 32px;
+`;
+
+const OnboardingGradient = styled(LinearGradient)`
+  width: 100%;
+  height: 100%;
+  border-radius: 16px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: row;
+  padding: 16px;
+`;
+
+const OnboardingButton = styled(TouchableOpacity)`
+position: absolute;
+  top: -32px;
+  margin: 0 32px;
+  width: 100%;
+  height: 160px;
+`;
+
+const OnboardingTitle = styled(Text)`
+  font-size: 18px;
+  font-weight: 700;
+  color: #000;
+  width: 60%;
+`;
