@@ -163,10 +163,6 @@ export default function History() {
     }
   };
 
-  function handleBack() {
-    router.back();
-  }
-
   const handleSearch = (query: string) => {
     setSearchQuery(query);
     const filtered = packageHistory.filter((item) =>
@@ -274,7 +270,6 @@ export default function History() {
           </HistoryItem>
         </TouchableOpacity>
       ))}
-      <Button title="Voltar" onPress={handleBack} />
     </HistoryContainer>
   );
 }
