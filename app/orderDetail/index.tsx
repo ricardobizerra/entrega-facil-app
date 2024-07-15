@@ -52,11 +52,13 @@ const OrderTitleText = styled(Text)`
   font-size: 16px;
   font-weight: 700;
   margin-bottom: 4px;
+  margin-right: 80px;
 `;
 
 const OrderDetailText = styled(Text)`
   color: #333333;
   font-size: 14px;
+  margin-right: 50px
 `;
 
 interface PackageOrderDetailItem {

@@ -1,9 +1,8 @@
-// Import necessary modules
 import React, { useState, useEffect } from 'react';
 import { database } from '@/config/firebaseConfig';
 import { collection, getDocs, query, where, Timestamp } from 'firebase/firestore';
 import styled from 'styled-components/native';
-import { Text, View, TouchableOpacity, TextInput, Modal, Button, Dimensions, TouchableWithoutFeedback } from 'react-native'; // Import Dimensions and TouchableWithoutFeedback from react-native
+import { Text, View, TouchableOpacity, TextInput, Modal, Dimensions, TouchableWithoutFeedback } from 'react-native'; // Import Dimensions and TouchableWithoutFeedback from react-native
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { format } from 'date-fns';
@@ -12,7 +11,6 @@ import Logo from '@/assets/images/logo-no-text.svg';
 import SearchIcon from '@/assets/images/search-icon.svg';
 import OrderDetail from '../orderDetail'; // Import the OrderDetail component
 
-// Styled components and other UI components
 const HistoryContainer = styled(View)`
   flex: 1;
   padding: 10px;
@@ -65,6 +63,7 @@ const ActionDot = styled(View)`
 const ActionContainer = styled(View)`
   flex-direction: row;
   align-items: center;
+  flex-wrap: wrap;
 `;
 
 const TabsContainer = styled(View)`
@@ -257,62 +256,75 @@ export default function History() {
 
       {/* Render filtered orders */}
       {filteredOrders.map((item, index) => (
-        <TouchableOpacity key={index} onPress={() => handleOrderDetail(item.id)}>
-          <HistoryItem>
-            <StyledLogo />
-            <View style={{ flex: 1 }}>
-              <HistoryTitleText>Pedido {item.id}</HistoryTitleText>
-              <HistoryText>
-                Previsão de entrega:{' '}
-                {format(item.arrival_date.toDate(), "dd 'de' MMMM 'de' yyyy", {
-                  locale: ptBR,
-                })}
-              </HistoryText>
-              <ActionContainer>
-                <ActionDot
-                  style={{
-                    backgroundColor: getStatusColor(item.status.toLowerCase()),
-                  }}
-                />
-                <HistoryText>{getLastAction(item.delivery_actions).action}</HistoryText>
-                <HistoryText>
-                  {getLastAction(item.delivery_actions).timestamp}
-                </HistoryText>
-              </ActionContainer>
-            </View>
-          </HistoryItem>
-        </TouchableOpacity>
-      ))}
+              <TouchableOpacity key={index} onPress={() => handleOrderDetail(item.id)}>
+                <HistoryItem>
+                  <StyledLogo />
+                  <View style={{ flex: 1 }}>
+                    <HistoryTitleText>Pedido {item.id}</HistoryTitleText>
+                    <HistoryText>
+                      Previsão de entrega:{' '}
+                      {format(item.arrival_date.toDate(), "dd 'de' MMMM 'de' yyyy", {
+                        locale: ptBR,
+                      })}
+                    </HistoryText>
+                    <ActionContainer>
+                      <ActionDot
+                        style={{
+                          backgroundColor: getStatusColor(item.status.toLowerCase()),
+                        }}
+                      />
+                      <HistoryText
+                        numberOfLines={1}
+                        ellipsizeMode="tail"
+                        style={{ flex: 1 }}
+                      >
+                        {getLastAction(item.delivery_actions).action}
+                      </HistoryText>
+                      <HistoryText
+                        numberOfLines={1}
+                        ellipsizeMode="tail"
+                        style={{ flex: 1 }}
+                      >
+                        {getLastAction(item.delivery_actions).timestamp}
+                      </HistoryText>
+                    </ActionContainer>
+                  </View>
+                </HistoryItem>
+              </TouchableOpacity>
+            ))}
 
-      {/* Modal for OrderDetail */}
-      <Modal
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <TouchableWithoutFeedback onPress={() => setModalVisible(false)}>
-          <View style={{
-            flex: 1,
-            justifyContent: 'center',
-            alignItems: 'center',
-            backgroundColor: 'rgba(0, 0, 0, 0.5)',
-          }}>
-            <View style={{
-              width: Dimensions.get('window').width * 0.9, // Set width to 90% of screen width
-              alignContent: 'center',
-              justifyContent: 'center',
-              borderRadius: 10,
-              padding: 20,
-            }}>
-              <OrderDetail
-                client_id={clientId}
-                product_id={selectedProductId}
-                closeModal={() => setModalVisible(false)}
-              />
-            </View>
-          </View>
-        </TouchableWithoutFeedback>
-      </Modal>
-    </HistoryContainer>
-  );
-}
+            {/* Modal for OrderDetail */}
+            <Modal
+              transparent={true}
+              visible={modalVisible}
+              onRequestClose={() => setModalVisible(false)}
+            >
+              <TouchableWithoutFeedback onPress={() => setModalVisible(false)}>
+                <View
+                  style={{
+                    flex: 1,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                  }}
+                >
+                  <View
+                    style={{
+                      width: Dimensions.get('window').width * 0.9, // Set width to 90% of screen width
+                      backgroundColor: 'white',
+                      borderRadius: 10,
+                      padding: 20,
+                    }}
+                  >
+                    <OrderDetail
+                      client_id={clientId}
+                      product_id={selectedProductId}
+                      closeModal={() => setModalVisible(false)}
+                    />
+                  </View>
+                </View>
+              </TouchableWithoutFeedback>
+            </Modal>
+          </HistoryContainer>
+        );
+      }

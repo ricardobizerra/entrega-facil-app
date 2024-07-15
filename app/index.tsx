@@ -65,7 +65,7 @@ export default function RegisterScreen() {
       if (!newUserSnapshot.empty) {
         const newUser = newUserSnapshot.docs[0].data();
         router.push({
-          pathname: '/(tabs)/HomeScreen',
+          pathname: '/onBoard',
           params: newUser,
         });
       }
