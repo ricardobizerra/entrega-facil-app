@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { database } from '@/config/firebaseConfig';
 import { collection, getDocs, query, where, Timestamp } from 'firebase/firestore';
 import styled from 'styled-components/native';
-import { Text, View, Button, TouchableOpacity, TextInput } from 'react-native';
+import { Text, View, TouchableOpacity, TextInput } from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { format } from 'date-fns';
@@ -20,9 +20,9 @@ const HistoryItem = styled(View)`
   background-color: #ffffff;
   padding: 15px;
   margin-bottom: 20px;
-  width: 95%;
-  margin-left: 20px;
   border-radius: 20px;
+  flex-direction: row; /* Ensure items are aligned horizontally */
+  align-items: center; /* Center items vertically */
 `;
 
 const HistoryText = styled(Text)`
@@ -30,6 +30,7 @@ const HistoryText = styled(Text)`
   font-size: 14px;
   font-weight: 500;
   margin-right: 10px;
+  margin-bottom: 4px;
 `;
 
 const HistoryTitleText = styled(Text)`
@@ -37,6 +38,7 @@ const HistoryTitleText = styled(Text)`
   font-size: 16px;
   font-weight: 700;
   margin-bottom: 4px;
+  flex-wrap: wrap; /* Wrap text if it exceeds the container width */
 `;
 
 const LogoContainer = styled(View)`
@@ -121,6 +123,7 @@ interface PackageHistoryItem {
   status: string;
   client_id: string;
   creation_date: Timestamp;
+  arrival_date: Timestamp;
   delivery_actions: { [key: string]: { action: string; timestamp: Timestamp } };
 }
 
@@ -161,10 +164,6 @@ export default function History() {
       console.error('Error retrieving client ID: ', error);
     }
   };
-
-  function handleBack() {
-    router.back();
-  }
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
@@ -247,33 +246,31 @@ export default function History() {
       {filteredOrders.map((item, index) => (
         <TouchableOpacity key={index} onPress={() => handleOrderDetail(item.id)}>
           <HistoryItem>
-            <LogoContainer>
-              <StyledLogo />
-              <View>
-                <HistoryTitleText>Pedido {item.id}</HistoryTitleText>
+            <StyledLogo />
+            <View style={{ flex: 1 }}>
+              <HistoryTitleText>Pedido {item.id}</HistoryTitleText>
+              <HistoryText>
+                Previsão de chegada:{' '}
+                {format(item.arrival_date.toDate(), "dd 'de' MMMM 'de' yyyy", {
+                  locale: ptBR,
+                })}
+              </HistoryText>
+              <ActionContainer>
+                <ActionDot
+                  style={{
+                    backgroundColor: getStatusColor(item.status.toLowerCase()),
+                  }}
+                />
+                <HistoryText>{getLastAction(item.delivery_actions).action}</HistoryText>
                 <HistoryText>
-                  Previsão de chegada:{' '}
-                  {format(item.creation_date.toDate(), "dd 'de' MMMM 'de' yyyy", {
-                    locale: ptBR,
-                  })}
+                  {getLastAction(item.delivery_actions).timestamp}
                 </HistoryText>
-                <ActionContainer>
-                  <ActionDot
-                    style={{
-                      backgroundColor: getStatusColor(item.status.toLowerCase()),
-                    }}
-                  />
-                  <HistoryText>{getLastAction(item.delivery_actions).action}</HistoryText>
-                  <HistoryText>
-                    {getLastAction(item.delivery_actions).timestamp}
-                  </HistoryText>
-                </ActionContainer>
-              </View>
-            </LogoContainer>
+              </ActionContainer>
+            </View>
           </HistoryItem>
         </TouchableOpacity>
       ))}
-      <Button title="Voltar" onPress={handleBack} />
     </HistoryContainer>
   );
 }
+

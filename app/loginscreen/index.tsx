@@ -5,6 +5,7 @@ import { database } from '@/config/firebaseConfig';
 import { useRouter } from 'expo-router';
 import { FontAwesome } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Logo from '@/assets/images/Logo.svg';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -44,7 +45,7 @@ export default function LoginScreen() {
 
   return (
     <View style={styles.container}>
-      <Image source={require('@/assets/images/Logo.png')} style={styles.logo} />
+      <Logo/>
       <Text style={styles.subtitle}>Login</Text>
       <View style={styles.inputContainer}>
         <FontAwesome name="envelope" size={24} color="black" />
@@ -88,7 +89,7 @@ const styles = StyleSheet.create({
     padding: 16,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f0f8ff',
+    backgroundColor: '#f5f5f5',
   },
   logo: {
     width: 210, 

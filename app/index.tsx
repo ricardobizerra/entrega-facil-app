@@ -6,6 +6,7 @@ import { useRouter } from 'expo-router';
 import { Snackbar } from 'react-native-paper';
 import { FontAwesome } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Logo from '@/assets/images/Logo.svg';
 
 export default function RegisterScreen() {
   const [name, setName] = useState('');
@@ -81,7 +82,7 @@ export default function RegisterScreen() {
 
   return (
     <View style={styles.container}>
-      <Image source={require('@/assets/images/Logo.png')} style={styles.logo} />
+      <Logo/>
       <Text style={styles.subtitle}>Cadastro</Text>
       <View style={styles.inputContainer}>
         <FontAwesome name="user" size={24} color="black" />
@@ -146,7 +147,7 @@ const styles = StyleSheet.create({
     padding: 16,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f0f8ff',
+    backgroundColor: '#f5f5f5',
   },
   logo: {
     width: 210, 
