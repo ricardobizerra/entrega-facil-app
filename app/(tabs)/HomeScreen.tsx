@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, Text, TouchableOpacity, Button, ScrollView, Dimensions } from 'react-native';
+import { View, StyleSheet, Text, TouchableOpacity, Button, ScrollView, Dimensions, Image } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Link } from "expo-router"; 
 import * as Location from 'expo-location';
@@ -115,8 +115,24 @@ export default function HomeScreen() {
     getClientId();
   }, []);
 
+  const partners: { name: string; key: string }[] = [
+    {
+      name: 'Netshoes',
+      key: 'netshoes',
+    },
+    {
+      name: 'Magalu',
+      key: 'magalu',
+    },
+  ];
+
   return (
-    <View style={styles.container}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={{
+        paddingBottom: Dimensions.get('screen').height / 10
+      }}
+    >
       {/* <Text style={styles.welcomeText}>Bem-vindo à Home!</Text>
       <Text style={styles.userInfo}>Email: {user?.email}</Text>
       <Text style={styles.userInfo}>Nome: {user?.name}</Text>
@@ -178,14 +194,16 @@ export default function HomeScreen() {
 
                       if (!lastDeliveryActionA || !lastDeliveryActionB) return 0;
 
-                      return lastDeliveryActionA.timestamp.toDate() < lastDeliveryActionB.timestamp.toDate() ? 1 : -1;
+                      if (!lastDeliveryActionA.timestamp || !lastDeliveryActionB.timestamp) return 0;
+
+                      return lastDeliveryActionA.timestamp?.toDate() < lastDeliveryActionB.timestamp?.toDate() ? 1 : -1;
                     })
                     .map((item, idx) => {
                       const lastDeliveryAction = Object.values(item.delivery_actions).pop();
 
                       if (!lastDeliveryAction) return;
 
-                      const formattedTimestamp = format(lastDeliveryAction.timestamp.toDate(), "dd/MM/yyyy HH:mm", {
+                      const formattedTimestamp = format(lastDeliveryAction.timestamp?.toDate(), "dd/MM/yyyy HH:mm", {
                         locale: ptBR,
                       })
 
@@ -195,13 +213,13 @@ export default function HomeScreen() {
                         <OrderStatusCard
                           key={item.id}
                           lastIndex={lastIndex}
-                          statusColor={getStatusColor(item.status.toLowerCase())}
+                          statusColor={getStatusColor(item.status?.toLowerCase())}
                         >
                           <StatusCardContainer>
                             <StatusCardTitle>
                               Pedido {item.id}{' '}
                               <ActionStatus>
-                                {lastDeliveryAction.notification_action ? lastDeliveryAction.notification_action?.toLowerCase() : lastDeliveryAction.action.toLowerCase()}
+                                {lastDeliveryAction.notification_action ? lastDeliveryAction.notification_action?.toLowerCase() : lastDeliveryAction.action?.toLowerCase()}
                               </ActionStatus>
                             </StatusCardTitle>
 
@@ -210,7 +228,7 @@ export default function HomeScreen() {
                             </StatusCardTimestamp>
                           </StatusCardContainer>
 
-                          <StatusCardColorBar statusColor={getStatusColor(item.status.toLowerCase())} />
+                          <StatusCardColorBar statusColor={getStatusColor(item.status?.toLowerCase())} />
                         </OrderStatusCard>
                       );
                     })
@@ -220,9 +238,32 @@ export default function HomeScreen() {
               }
             </ScrollView>
           </Section>
+
+          <Section>
+            <SectionTitle>
+              Nossos parceiros
+            </SectionTitle>
+
+            <ScrollView
+              showsHorizontalScrollIndicator={false}
+              horizontal
+            >
+              <PartnerCard key='netshoes'>
+                <PartnerImage
+                  source={require(`@/assets/images/partner-netshoes.png`)}
+                />
+              </PartnerCard>
+
+              <PartnerCard key='magalu'>
+                <PartnerImage
+                  source={require(`@/assets/images/partner-magalu.png`)}
+                />
+              </PartnerCard>
+            </ScrollView>
+          </Section>
         </SectionContainer>
       </SubContainer>
-    </View>
+    </ScrollView>
   );
 
 }
@@ -232,7 +273,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f2af2c',
     paddingTop: 32,
-    height: '100%',
+    paddingBottom: 32,
   },
   welcomeText: {
     fontSize: 24,
@@ -338,7 +379,7 @@ const OnboardingTitle = styled(Text)`
 const SectionContainer = styled(View)`
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 24px;
   margin-top: 128px; 
 `;
 
@@ -389,4 +430,16 @@ const StatusCardColorBar = styled(View)<{ statusColor?: string }>`
   width: 100%;
   height: 16px;
   background-color: ${(props) => props.statusColor || '#000'};
+`;
+
+const PartnerCard = styled(View)`
+  display: flex;
+  border-radius: 16px;
+  margin-right: 16px;
+  overflow: hidden;
+`;
+
+const PartnerImage = styled(Image)`
+  aspect-ratio: 1;
+  height: 120px;
 `;
