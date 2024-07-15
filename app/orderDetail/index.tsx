@@ -2,29 +2,56 @@ import React, { useState, useEffect } from 'react';
 import { database } from '@/config/firebaseConfig';
 import { collection, getDocs, query, where, Timestamp } from 'firebase/firestore';
 import styled from 'styled-components/native';
-import { Text, View, Button } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import Logo from '@/assets/images/logo-no-text.svg';
 
 const OrderDetailContainer = styled(View)`
   display: flex;
   flex-direction: column;
-  align-items: center;
-  margin-top: 20px;
+  align-items: left;
   padding: 10px;
-  background-color: #f5f5f5;
+  background-color: #ffffff;
+`;
+
+const OrderDetailIcon = styled(View)`
+  flex-direction: row;
+  align-items: center;
+  justify-content: left;
+  margin-left: 10px;
+  margin-top: 10px;
+`;
+
+const LogoImage = styled(Logo)`
+  width: 40px;
+  height: 40px;
+  margin-right: 10px;
 `;
 
 const OrderDetailItem = styled(View)`
-  background-color: #ffffff;
-  padding: 15px;
-  margin-vertical: 10px;
-  border-radius: 8px;
-  width: 90%;
-  shadow-color: #000;
-  shadow-offset: 0px 2px;
-  shadow-opacity: 0.1;
-  shadow-radius: 4px;
-  elevation: 3;
+  padding: 21px;
+  flex-direction: row; /* Ensure items are aligned horizontally */
+  align-items: center; /* Center items vertically */
+`;
+
+const ActionDot = styled(View)<{ isLastDot?: boolean }>`
+  width: 14px;
+  height: 14px;
+  border-radius: 7px;
+  background-color: ${props => (props.isLastDot ? '#000' : '#3ACB48')}; /* Black if last dot, green otherwise */
+`;
+
+const ActionTextContainer = styled(View)`
+  margin-left: 10px; /* Adjust as needed */
+`;
+
+const OrderTitleText = styled(Text)`
+  color: #3a3a3a;
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 4px;
 `;
 
 const OrderDetailText = styled(Text)`
@@ -37,13 +64,18 @@ interface PackageOrderDetailItem {
   status: string;
   client_id: string;
   creation_date: Timestamp;
+  arrival_date: Timestamp;
   delivery_actions: { [key: string]: { action: string; timestamp: Timestamp } };
 }
 
-export default function OrderDetail() {
-  const router = useRouter();
-  const { client_id, product_id } = useLocalSearchParams<{ client_id: string, product_id: string }>();
+interface OrderDetailProps {
+  client_id: string | null; // Define client_id as a prop
+  product_id: string;
+  closeModal: () => void; // Add closeModal prop
+}
 
+const OrderDetail: React.FC<OrderDetailProps> = ({ client_id, product_id, closeModal }) => {
+  const router = useRouter();
   const [packageOrderDetail, setPackageOrderDetail] = useState<PackageOrderDetailItem[]>([]);
 
   const fetchOrderDetailFromFirebase = async () => {
@@ -58,7 +90,7 @@ export default function OrderDetail() {
         ...doc.data(),
         delivery_actions: doc.data().delivery_actions || {} // Default to empty object if delivery_actions doesn't exist
       })) as PackageOrderDetailItem[];
-      setPackageOrderDetail(newEntries);
+      setPackageOrderDetail(newEntries.filter(entry => entry.id === product_id));
     } catch (error) {
       console.error('Error fetching data: ', error);
     }
@@ -80,27 +112,38 @@ export default function OrderDetail() {
     );
   }
 
-  return (
+  return (  
     <OrderDetailContainer>
       {packageOrderDetail.map((item, index) => (
-        <OrderDetailItem key={index}>
-          <OrderDetailText>ID do produto: {item.id}</OrderDetailText>
-          <OrderDetailText>Status: {item.status}</OrderDetailText>
-          <OrderDetailText>Data de compra: {item.creation_date.toDate().toLocaleString()}</OrderDetailText>
-          
-          {/* Rendering delivery_actions */}
-          <View>
-            <Text>Acompanhe seu pedido:</Text>
+        <View key={index}>
+          <OrderDetailIcon>
+            <LogoImage/>
+            <View>
+              <OrderTitleText>Status do pedido</OrderTitleText>
+              <OrderTitleText>Produto {item.id}</OrderTitleText>
+              <OrderDetailText>Previsão de entrega:{' '}
+                {format(item.arrival_date.toDate(), "dd/MM/yyyy HH:mm", {
+                  locale: ptBR,
+                })}
+              </OrderDetailText>
+            </View>
+          </OrderDetailIcon>
+          <View>          
+            {/* Rendering delivery_actions */}
             {Object.keys(item.delivery_actions).map((key, actionIndex) => (
-              <View key={actionIndex}>
-                <Text>{item.delivery_actions[key].action}</Text>
-                <Text>Data: {item.delivery_actions[key].timestamp.toDate().toLocaleString()}</Text>
-              </View>
+              <OrderDetailItem key={actionIndex}>
+                <ActionDot isLastDot={actionIndex === Object.keys(item.delivery_actions).length - 1 && item.status === 'sent'} />
+                <ActionTextContainer>
+                  <Text>{item.delivery_actions[key].action}</Text>
+                  <Text>{format(item.delivery_actions[key].timestamp.toDate(), "dd/MM/yyyy HH:mm")}</Text>
+                </ActionTextContainer>
+              </OrderDetailItem>
             ))}
           </View>
-        </OrderDetailItem>
+        </View>
       ))}
-      <Button title="Voltar" onPress={handleBack} />
     </OrderDetailContainer>
   );
 }
+
+export default OrderDetail;
