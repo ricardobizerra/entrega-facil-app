@@ -177,10 +177,14 @@ export default function History() {
   // Handle search input change
   const handleSearch = (query: string) => {
     setSearchQuery(query);
-    const filtered = packageHistory.filter((item) =>
+    const filtered = filteredOrders.filter((item) =>
       item.id.toLowerCase().includes(query.toLowerCase())
     );
     setFilteredOrders(filtered);
+
+    if (query === '') {
+      filterOrdersByStatus(selectedTab, packageHistory);
+    }
   };
 
   // Filter orders based on status (in progress or completed)
