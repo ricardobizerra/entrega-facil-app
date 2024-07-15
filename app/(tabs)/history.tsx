@@ -105,7 +105,7 @@ const SearchIconContainer = styled(View)`
   margin-right: 10px;
 `;
 
-const getStatusColor = (status: string): string => {
+export const getStatusColor = (status: string): string => {
   switch (status) {
     case 'processing':
       return '#FF5733'; // Vermelho
@@ -118,13 +118,13 @@ const getStatusColor = (status: string): string => {
   }
 };
 
-interface PackageHistoryItem {
+export interface PackageHistoryItem {
   id: string;
   status: string;
   client_id: string;
   creation_date: Timestamp;
   arrival_date: Timestamp;
-  delivery_actions: { [key: string]: { action: string; timestamp: Timestamp } };
+  delivery_actions: { [key: string]: { action: string; timestamp: Timestamp; notification_action?: string; } };
 }
 
 export default function History() {
