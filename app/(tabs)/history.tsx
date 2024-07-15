@@ -1,15 +1,18 @@
+// Import necessary modules
 import React, { useState, useEffect } from 'react';
 import { database } from '@/config/firebaseConfig';
 import { collection, getDocs, query, where, Timestamp } from 'firebase/firestore';
 import styled from 'styled-components/native';
-import { Text, View, TouchableOpacity, TextInput } from 'react-native';
+import { Text, View, TouchableOpacity, TextInput, Modal, Button, Dimensions, TouchableWithoutFeedback } from 'react-native'; // Import Dimensions and TouchableWithoutFeedback from react-native
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import Logo from '@/assets/images/logo-no-text.svg';
 import SearchIcon from '@/assets/images/search-icon.svg';
+import OrderDetail from '../orderDetail'; // Import the OrderDetail component
 
+// Styled components and other UI components
 const HistoryContainer = styled(View)`
   flex: 1;
   padding: 10px;
@@ -127,6 +130,7 @@ interface PackageHistoryItem {
   delivery_actions: { [key: string]: { action: string; timestamp: Timestamp } };
 }
 
+// Main History component
 export default function History() {
   const router = useRouter();
   const [clientId, setClientId] = useState<string | null>(null);
@@ -134,7 +138,12 @@ export default function History() {
   const [selectedTab, setSelectedTab] = useState<'Em andamento' | 'Finalizado'>('Em andamento');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [filteredOrders, setFilteredOrders] = useState<PackageHistoryItem[]>([]);
+  const [selectedProductId, setSelectedProductId] = useState<string>(''); // State to store selected product ID for OrderDetail
 
+  // State to manage modal visibility and selected product ID
+  const [modalVisible, setModalVisible] = useState(false);
+
+  // Fetch data from Firebase based on client ID
   const fetchHistoryFromFirebase = async (clientId: string) => {
     try {
       const q = query(collection(database, 'products'), where('client_id', '==', clientId));
@@ -151,6 +160,7 @@ export default function History() {
     }
   };
 
+  // Get client ID from AsyncStorage
   const getClientId = async () => {
     try {
       const clientId = await AsyncStorage.getItem('userEmail');
@@ -165,6 +175,7 @@ export default function History() {
     }
   };
 
+  // Handle search input change
   const handleSearch = (query: string) => {
     setSearchQuery(query);
     const filtered = packageHistory.filter((item) =>
@@ -173,6 +184,7 @@ export default function History() {
     setFilteredOrders(filtered);
   };
 
+  // Filter orders based on status (in progress or completed)
   const filterOrdersByStatus = (
     status: 'Em andamento' | 'Finalizado',
     orders: PackageHistoryItem[]
@@ -183,26 +195,13 @@ export default function History() {
     setFilteredOrders(filtered);
   };
 
+  // Handle order detail modal visibility
   const handleOrderDetail = (item_id: string) => {
-    if (clientId) {
-      router.push({
-        pathname: '/orderDetail',
-        params: {
-          client_id: clientId,
-          product_id: item_id,
-        },
-      });
-    }
+    setSelectedProductId(item_id);
+    setModalVisible(true); // Show modal for OrderDetail
   };
 
-  useEffect(() => {
-    getClientId();
-  }, []);
-
-  useEffect(() => {
-    filterOrdersByStatus(selectedTab, packageHistory);
-  }, [selectedTab, packageHistory]);
-
+  // Get last delivery action for a given order
   const getLastAction = (delivery_actions: {
     [key: string]: { action: string; timestamp: Timestamp };
   }) => {
@@ -221,8 +220,20 @@ export default function History() {
     };
   };
 
+  // Fetch client ID on component mount
+  useEffect(() => {
+    getClientId();
+  }, []);
+
+  // Filter orders when selected tab or package history changes
+  useEffect(() => {
+    filterOrdersByStatus(selectedTab, packageHistory);
+  }, [selectedTab, packageHistory]);
+
+  // Render the History component
   return (
     <HistoryContainer>
+      {/* Tabs for filtering orders */}
       <TabsContainer>
         <TouchableOpacity onPress={() => setSelectedTab('Em andamento')}>
           <TabText selected={selectedTab === 'Em andamento'}>Em andamento</TabText>
@@ -232,6 +243,7 @@ export default function History() {
         </TouchableOpacity>
       </TabsContainer>
 
+      {/* Search bar for filtering orders */}
       <SearchContainer>
         <SearchIconContainer>
           <SearchIcon />
@@ -243,6 +255,7 @@ export default function History() {
         />
       </SearchContainer>
 
+      {/* Render filtered orders */}
       {filteredOrders.map((item, index) => (
         <TouchableOpacity key={index} onPress={() => handleOrderDetail(item.id)}>
           <HistoryItem>
@@ -250,7 +263,7 @@ export default function History() {
             <View style={{ flex: 1 }}>
               <HistoryTitleText>Pedido {item.id}</HistoryTitleText>
               <HistoryText>
-                Previsão de chegada:{' '}
+                Previsão de entrega:{' '}
                 {format(item.arrival_date.toDate(), "dd 'de' MMMM 'de' yyyy", {
                   locale: ptBR,
                 })}
@@ -270,7 +283,36 @@ export default function History() {
           </HistoryItem>
         </TouchableOpacity>
       ))}
+
+      {/* Modal for OrderDetail */}
+      <Modal
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <TouchableWithoutFeedback onPress={() => setModalVisible(false)}>
+          <View style={{
+            flex: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          }}>
+            <View style={{
+              width: Dimensions.get('window').width * 0.9, // Set width to 90% of screen width
+              alignContent: 'center',
+              justifyContent: 'center',
+              borderRadius: 10,
+              padding: 20,
+            }}>
+              <OrderDetail
+                client_id={clientId}
+                product_id={selectedProductId}
+                closeModal={() => setModalVisible(false)}
+              />
+            </View>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
     </HistoryContainer>
   );
 }
-
