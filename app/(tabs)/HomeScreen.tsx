@@ -170,49 +170,53 @@ export default function HomeScreen() {
               horizontal
             >
               {
-                packageHistory && packageHistory.map((item, idx) => {
-                  const lastDeliveryAction = Object.values(item.delivery_actions).pop();
+                packageHistory.length > 0
+                ? packageHistory
+                    .sort((a, b) => {
+                      const lastDeliveryActionA = Object.values(a.delivery_actions)[Object.values(a.delivery_actions).length - 1];
+                      const lastDeliveryActionB = Object.values(b.delivery_actions)[Object.values(b.delivery_actions).length - 1];
 
-                  if (!lastDeliveryAction) return;
+                      if (!lastDeliveryActionA || !lastDeliveryActionB) return 0;
 
-                  const formattedTimestamp = format(lastDeliveryAction.timestamp.toDate(), "dd/MM/yyyy HH:mm", {
-                    locale: ptBR,
-                  })
+                      return lastDeliveryActionA.timestamp.toDate() < lastDeliveryActionB.timestamp.toDate() ? 1 : -1;
+                    })
+                    .map((item, idx) => {
+                      const lastDeliveryAction = Object.values(item.delivery_actions).pop();
 
-                  const lastIndex = idx === packageHistory.length - 1;
+                      if (!lastDeliveryAction) return;
 
-                  return (
-                    <OrderStatusCard
-                      key={item.id}
-                      lastIndex={lastIndex}
-                      onPress={() => 
-                        router.push({
-                          pathname: '/orderDetail',
-                          params: {
-                            client_id: clientId,
-                            product_id: item.id,
-                          },
-                        })
-                      }
-                      statusColor={getStatusColor(item.status.toLowerCase())}
-                    >
-                      <StatusCardContainer>
-                        <StatusCardTitle>
-                          Pedido {item.id}{' '}
-                          <ActionStatus>
-                            {lastDeliveryAction.notification_action ? lastDeliveryAction.notification_action?.toLowerCase() : lastDeliveryAction.action.toLowerCase()}
-                          </ActionStatus>
-                        </StatusCardTitle>
+                      const formattedTimestamp = format(lastDeliveryAction.timestamp.toDate(), "dd/MM/yyyy HH:mm", {
+                        locale: ptBR,
+                      })
 
-                        <StatusCardTimestamp>
-                          {formattedTimestamp}
-                        </StatusCardTimestamp>
-                      </StatusCardContainer>
+                      const lastIndex = idx === packageHistory.length - 1;
 
-                      <StatusCardColorBar statusColor={getStatusColor(item.status.toLowerCase())} />
-                    </OrderStatusCard>
-                  );
-                })
+                      return (
+                        <OrderStatusCard
+                          key={item.id}
+                          lastIndex={lastIndex}
+                          statusColor={getStatusColor(item.status.toLowerCase())}
+                        >
+                          <StatusCardContainer>
+                            <StatusCardTitle>
+                              Pedido {item.id}{' '}
+                              <ActionStatus>
+                                {lastDeliveryAction.notification_action ? lastDeliveryAction.notification_action?.toLowerCase() : lastDeliveryAction.action.toLowerCase()}
+                              </ActionStatus>
+                            </StatusCardTitle>
+
+                            <StatusCardTimestamp>
+                              {formattedTimestamp}
+                            </StatusCardTimestamp>
+                          </StatusCardContainer>
+
+                          <StatusCardColorBar statusColor={getStatusColor(item.status.toLowerCase())} />
+                        </OrderStatusCard>
+                      );
+                    })
+                : (
+                    <Text>Nenhuma atualização encontrada</Text>
+                  )
               }
             </ScrollView>
           </Section>
@@ -349,7 +353,7 @@ const SectionTitle = styled(Text)`
   color: #000;
 `;
 
-const OrderStatusCard = styled(TouchableOpacity)<{ lastIndex?: boolean; statusColor?: string }>`
+const OrderStatusCard = styled(View)<{ lastIndex?: boolean; statusColor?: string }>`
   display: flex;
   gap: 8px;
   border-radius: 8px;
