@@ -38,6 +38,7 @@ const HistoryTitleText = styled(Text)`
   font-size: 16px;
   font-weight: 700;
   margin-bottom: 4px;
+  flex-wrap: wrap; /* Wrap text if it exceeds the container width */
 `;
 
 const LogoContainer = styled(View)`
