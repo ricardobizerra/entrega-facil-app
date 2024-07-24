@@ -137,6 +137,12 @@ export default function RegisterScreen() {
           Faça login
         </Text>
       </Text>
+      <Text style={styles.entregadorText}>
+        {' '}
+        <Text style={styles.entregadorLink} onPress={() => router.push('/loginscreen-entregador')}>
+          É entregador?
+        </Text>
+      </Text>
     </View>
   );
 }
@@ -210,5 +216,15 @@ const styles = StyleSheet.create({
   errorText: {
     color: 'red',
     marginBottom: 10,
+  },
+  entregadorText: {
+    color: '#000',
+    position: 'absolute',
+    bottom: 10,
+    fontSize: 14,
+  },
+  entregadorLink: {
+    color: '#FFA500',
+    fontWeight: 'bold',
   },
 });
