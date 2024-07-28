@@ -68,6 +68,7 @@ interface PackageOrderDetailItem {
   creation_date: Timestamp;
   arrival_date: Timestamp;
   delivery_actions: { [key: string]: { action: string; timestamp: Timestamp } };
+  address: string; // Add the address attribute
 }
 
 interface OrderDetailProps {
@@ -128,6 +129,7 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ client_id, product_id, closeM
                   locale: ptBR,
                 })}
               </OrderDetailText>
+              <OrderDetailText>Endereço: {item.address}</OrderDetailText> {/* Display the address */}
             </View>
           </OrderDetailIcon>
           <View>          

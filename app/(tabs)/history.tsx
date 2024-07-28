@@ -121,6 +121,20 @@ const AcceptButtonText = styled(Text)`
   text-align: center;
 `;
 
+const ConfirmButton = styled(TouchableOpacity)`
+  background-color: #FF5733;
+  padding: 10px;
+  border-radius: 10px;
+  margin-top: 10px;
+`;
+
+const ConfirmButtonText = styled(Text)`
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: center;
+`;
+
 export const getStatusColor = (status: string): string => {
   switch (status) {
     case 'processing':
@@ -255,6 +269,22 @@ export default function History() {
     }
   };
 
+  const confirmDelivery = async (orderId: string) => {
+    try {
+      const orderRef = doc(database, 'products', orderId);
+      await updateDoc(orderRef, { status: 'received' });
+
+      const updatedHistory = packageHistory.map(order =>
+        order.id === orderId ? { ...order, status: 'received' } : order
+      );
+
+      setPackageHistory(updatedHistory);
+      filterOrdersByStatus(selectedTab, updatedHistory);
+    } catch (error) {
+      console.error('Error confirming delivery: ', error);
+    }
+  };
+
   useEffect(() => {
     getClientId();
   }, []);
@@ -325,6 +355,11 @@ export default function History() {
                 <AcceptButton onPress={() => acceptOrder(item.id)}>
                   <AcceptButtonText>Aceitar</AcceptButtonText>
                 </AcceptButton>
+              )}
+              {selectedTab === 'Em andamento' && (
+                <ConfirmButton onPress={() => confirmDelivery(item.id)}>
+                  <ConfirmButtonText>Confirmar Entrega</ConfirmButtonText>
+                </ConfirmButton>
               )}
             </View>
           </HistoryItem>
