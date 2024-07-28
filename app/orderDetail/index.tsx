@@ -129,7 +129,7 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ client_id, product_id, closeM
                   locale: ptBR,
                 })}
               </OrderDetailText>
-              <OrderDetailText>Endereço: {item.address}</OrderDetailText> {/* Display the address */}
+              <OrderDetailText>Endereço: {item.address}</OrderDetailText>
             </View>
           </OrderDetailIcon>
           <View>          
