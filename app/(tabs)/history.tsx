@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { database } from '@/config/firebaseConfig';
-import { collection, getDocs, query, where, Timestamp } from 'firebase/firestore';
+import { collection, getDocs, query, where, Timestamp, doc, updateDoc } from 'firebase/firestore';
 import styled from 'styled-components/native';
-import { Text, View, TouchableOpacity, TextInput, Modal, Dimensions, TouchableWithoutFeedback } from 'react-native'; // Import Dimensions and TouchableWithoutFeedback from react-native
+import { Text, View, TouchableOpacity, TextInput, Modal, Dimensions, TouchableWithoutFeedback } from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import Logo from '@/assets/images/logo-no-text.svg';
 import SearchIcon from '@/assets/images/search-icon.svg';
-import OrderDetail from '../orderDetail'; // Import the OrderDetail component
+import OrderDetail from '../orderDetail';
 
 const HistoryContainer = styled(View)`
   flex: 1;
@@ -22,8 +22,8 @@ const HistoryItem = styled(View)`
   padding: 15px;
   margin-bottom: 20px;
   border-radius: 20px;
-  flex-direction: row; /* Ensure items are aligned horizontally */
-  align-items: center; /* Center items vertically */
+  flex-direction: row;
+  align-items: center;
 `;
 
 const HistoryText = styled(Text)`
@@ -39,7 +39,7 @@ const HistoryTitleText = styled(Text)`
   font-size: 16px;
   font-weight: 700;
   margin-bottom: 4px;
-  flex-wrap: wrap; /* Wrap text if it exceeds the container width */
+  flex-wrap: wrap;
 `;
 
 const LogoContainer = styled(View)`
@@ -92,7 +92,7 @@ const TabText = styled(Text)<TabTextProps>`
 const SearchContainer = styled(View)`
   flex-direction: row;
   align-items: center;
-  justify-content: center; /* Center horizontally */
+  justify-content: center;
   margin-bottom: 20px;
 `;
 
@@ -107,16 +107,30 @@ const SearchIconContainer = styled(View)`
   margin-right: 10px;
 `;
 
+const AcceptButton = styled(TouchableOpacity)`
+  background-color: #4CAF50;
+  padding: 10px;
+  border-radius: 10px;
+  margin-top: 10px;
+`;
+
+const AcceptButtonText = styled(Text)`
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: center;
+`;
+
 export const getStatusColor = (status: string): string => {
   switch (status) {
     case 'processing':
-      return '#FF5733'; // Vermelho
+      return '#FF5733';
     case 'sent':
-      return '#F5A623'; // Amarelo
+      return '#F5A623';
     case 'received':
-      return '#4CAF50'; // Verde
+      return '#4CAF50';
     default:
-      return '#000000'; // Cor padrão, caso não haja correspondência
+      return '#000000';
   }
 };
 
@@ -127,22 +141,20 @@ export interface PackageHistoryItem {
   creation_date: Timestamp;
   arrival_date: Timestamp;
   delivery_actions: { [key: string]: { action: string; timestamp: Timestamp; notification_action?: string; } };
+  accepted?: boolean;
 }
 
-// Main History component
 export default function History() {
   const router = useRouter();
   const [clientId, setClientId] = useState<string | null>(null);
   const [packageHistory, setPackageHistory] = useState<PackageHistoryItem[]>([]);
-  const [selectedTab, setSelectedTab] = useState<'Em andamento' | 'Finalizado'>('Em andamento');
+  const [selectedTab, setSelectedTab] = useState<'Novos' | 'Em andamento' | 'Finalizado'>('Novos');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [filteredOrders, setFilteredOrders] = useState<PackageHistoryItem[]>([]);
-  const [selectedProductId, setSelectedProductId] = useState<string>(''); // State to store selected product ID for OrderDetail
+  const [selectedProductId, setSelectedProductId] = useState<string>(''); 
 
-  // State to manage modal visibility and selected product ID
   const [modalVisible, setModalVisible] = useState(false);
 
-  // Fetch data from Firebase based on client ID
   const fetchHistoryFromFirebase = async (clientId: string) => {
     try {
       const q = query(collection(database, 'products'), where('client_id', '==', clientId));
@@ -153,13 +165,12 @@ export default function History() {
         delivery_actions: doc.data().delivery_actions || {},
       })) as PackageHistoryItem[];
       setPackageHistory(newEntries);
-      filterOrdersByStatus(selectedTab, newEntries); // Filter initial orders by selected tab
+      filterOrdersByStatus(selectedTab, newEntries); 
     } catch (error) {
       console.error('Error fetching data: ', error);
     }
   };
 
-  // Get client ID from AsyncStorage
   const getClientId = async () => {
     try {
       const clientId = await AsyncStorage.getItem('userEmail');
@@ -174,7 +185,6 @@ export default function History() {
     }
   };
 
-  // Handle search input change
   const handleSearch = (query: string) => {
     setSearchQuery(query);
     const filtered = filteredOrders.filter((item) =>
@@ -187,24 +197,30 @@ export default function History() {
     }
   };
 
-  // Filter orders based on status (in progress or completed)
   const filterOrdersByStatus = (
-    status: 'Em andamento' | 'Finalizado',
+    status: 'Novos' | 'Em andamento' | 'Finalizado',
     orders: PackageHistoryItem[]
   ) => {
-    const filtered = orders.filter((order) =>
-      status === 'Em andamento' ? order.status !== 'received' : order.status === 'received'
-    );
+    let filtered: PackageHistoryItem[];
+    switch (status) {
+      case 'Novos':
+        filtered = orders.filter(order => !order.accepted);
+        break;
+      case 'Em andamento':
+        filtered = orders.filter(order => order.accepted && order.status !== 'received');
+        break;
+      case 'Finalizado':
+        filtered = orders.filter(order => order.status === 'received');
+        break;
+    }
     setFilteredOrders(filtered);
   };
 
-  // Handle order detail modal visibility
   const handleOrderDetail = (item_id: string) => {
     setSelectedProductId(item_id);
-    setModalVisible(true); // Show modal for OrderDetail
+    setModalVisible(true);
   };
 
-  // Get last delivery action for a given order
   const getLastAction = (delivery_actions: {
     [key: string]: { action: string; timestamp: Timestamp };
   }) => {
@@ -223,21 +239,36 @@ export default function History() {
     };
   };
 
-  // Fetch client ID on component mount
+  const acceptOrder = async (orderId: string) => {
+    try {
+      const orderRef = doc(database, 'products', orderId);
+      await updateDoc(orderRef, { accepted: true });
+
+      const updatedHistory = packageHistory.map(order =>
+        order.id === orderId ? { ...order, accepted: true } : order
+      );
+
+      setPackageHistory(updatedHistory);
+      filterOrdersByStatus(selectedTab, updatedHistory);
+    } catch (error) {
+      console.error('Error accepting order: ', error);
+    }
+  };
+
   useEffect(() => {
     getClientId();
   }, []);
 
-  // Filter orders when selected tab or package history changes
   useEffect(() => {
     filterOrdersByStatus(selectedTab, packageHistory);
   }, [selectedTab, packageHistory]);
 
-  // Render the History component
   return (
     <HistoryContainer>
-      {/* Tabs for filtering orders */}
       <TabsContainer>
+        <TouchableOpacity onPress={() => setSelectedTab('Novos')}>
+          <TabText selected={selectedTab === 'Novos'}>Novos</TabText>
+        </TouchableOpacity>
         <TouchableOpacity onPress={() => setSelectedTab('Em andamento')}>
           <TabText selected={selectedTab === 'Em andamento'}>Em andamento</TabText>
         </TouchableOpacity>
@@ -246,7 +277,6 @@ export default function History() {
         </TouchableOpacity>
       </TabsContainer>
 
-      {/* Search bar for filtering orders */}
       <SearchContainer>
         <SearchIconContainer>
           <SearchIcon />
@@ -258,77 +288,80 @@ export default function History() {
         />
       </SearchContainer>
 
-      {/* Render filtered orders */}
       {filteredOrders.map((item, index) => (
-              <TouchableOpacity key={index} onPress={() => handleOrderDetail(item.id)}>
-                <HistoryItem>
-                  <StyledLogo />
-                  <View style={{ flex: 1 }}>
-                    <HistoryTitleText>Pedido {item.id}</HistoryTitleText>
-                    <HistoryText>
-                      Previsão de entrega:{' '}
-                      {format(item.arrival_date.toDate(), "dd 'de' MMMM 'de' yyyy", {
-                        locale: ptBR,
-                      })}
-                    </HistoryText>
-                    <ActionContainer>
-                      <ActionDot
-                        style={{
-                          backgroundColor: getStatusColor(item.status.toLowerCase()),
-                        }}
-                      />
-                      <HistoryText
-                        numberOfLines={1}
-                        ellipsizeMode="tail"
-                        style={{ flex: 1 }}
-                      >
-                        {getLastAction(item.delivery_actions).action}
-                      </HistoryText>
-                      <HistoryText
-                        numberOfLines={1}
-                        ellipsizeMode="tail"
-                        style={{ flex: 1 }}
-                      >
-                        {getLastAction(item.delivery_actions).timestamp}
-                      </HistoryText>
-                    </ActionContainer>
-                  </View>
-                </HistoryItem>
-              </TouchableOpacity>
-            ))}
-
-            {/* Modal for OrderDetail */}
-            <Modal
-              transparent={true}
-              visible={modalVisible}
-              onRequestClose={() => setModalVisible(false)}
-            >
-              <TouchableWithoutFeedback onPress={() => setModalVisible(false)}>
-                <View
+        <TouchableOpacity key={index} onPress={() => handleOrderDetail(item.id)}>
+          <HistoryItem>
+            <StyledLogo />
+            <View style={{ flex: 1 }}>
+              <HistoryTitleText>Pedido {item.id}</HistoryTitleText>
+              <HistoryText>
+                Previsão de entrega:{' '}
+                {format(item.arrival_date.toDate(), "dd 'de' MMMM 'de' yyyy", {
+                  locale: ptBR,
+                })}
+              </HistoryText>
+              <ActionContainer>
+                <ActionDot
                   style={{
-                    flex: 1,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                    backgroundColor: getStatusColor(item.status.toLowerCase()),
                   }}
+                />
+                <HistoryText
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                  style={{ flex: 1 }}
                 >
-                  <View
-                    style={{
-                      width: Dimensions.get('window').width * 0.9, // Set width to 90% of screen width
-                      backgroundColor: 'white',
-                      borderRadius: 10,
-                      padding: 20,
-                    }}
-                  >
-                    <OrderDetail
-                      client_id={clientId}
-                      product_id={selectedProductId}
-                      closeModal={() => setModalVisible(false)}
-                    />
-                  </View>
-                </View>
-              </TouchableWithoutFeedback>
-            </Modal>
-          </HistoryContainer>
-        );
-      }
+                  {getLastAction(item.delivery_actions).action}
+                </HistoryText>
+                <HistoryText
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                  style={{ flex: 1 }}
+                >
+                  {getLastAction(item.delivery_actions).timestamp}
+                </HistoryText>
+              </ActionContainer>
+              {selectedTab === 'Novos' && (
+                <AcceptButton onPress={() => acceptOrder(item.id)}>
+                  <AcceptButtonText>Aceitar</AcceptButtonText>
+                </AcceptButton>
+              )}
+            </View>
+          </HistoryItem>
+        </TouchableOpacity>
+      ))}
+
+      <Modal
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <TouchableWithoutFeedback onPress={() => setModalVisible(false)}>
+          <View
+            style={{
+              flex: 1,
+              justifyContent: 'center',
+              alignItems: 'center',
+              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            }}
+          >
+            <View
+              style={{
+                width: Dimensions.get('window').width * 0.9,
+                backgroundColor: 'white',
+                borderRadius: 10,
+                padding: 20,
+              }}
+            >
+              <OrderDetail
+                client_id={clientId}
+                product_id={selectedProductId}
+                closeModal={() => setModalVisible(false)}
+              />
+            </View>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
+    </HistoryContainer>
+  );
+}
