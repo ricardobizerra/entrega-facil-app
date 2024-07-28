@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { database } from '@/config/firebaseConfig';
 import { collection, getDocs, query, where, Timestamp, doc, updateDoc } from 'firebase/firestore';
 import styled from 'styled-components/native';
@@ -156,6 +156,7 @@ export interface PackageHistoryItem {
   arrival_date: Timestamp;
   delivery_actions: { [key: string]: { action: string; timestamp: Timestamp; notification_action?: string; } };
   accepted?: boolean;
+  code: string;
 }
 
 export default function History() {
@@ -165,9 +166,12 @@ export default function History() {
   const [selectedTab, setSelectedTab] = useState<'Novos' | 'Em andamento' | 'Finalizado'>('Novos');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [filteredOrders, setFilteredOrders] = useState<PackageHistoryItem[]>([]);
-  const [selectedProductId, setSelectedProductId] = useState<string>(''); 
-
+  const [selectedProductId, setSelectedProductId] = useState<string>('');
   const [modalVisible, setModalVisible] = useState(false);
+  const [confirmModalVisible, setConfirmModalVisible] = useState(false);
+  const [enteredCode, setEnteredCode] = useState('');
+  const codeInputRef = useRef<TextInput>(null);
+
 
   const fetchHistoryFromFirebase = async (clientId: string) => {
     try {
@@ -270,18 +274,29 @@ export default function History() {
   };
 
   const confirmDelivery = async (orderId: string) => {
-    try {
-      const orderRef = doc(database, 'products', orderId);
-      await updateDoc(orderRef, { status: 'received' });
+    setSelectedProductId(orderId);
+    setConfirmModalVisible(true);
+  };
+  const verifyAndConfirmDelivery = async () => {
+    const orderDetails = packageHistory.find(order => order.id === selectedProductId);
 
-      const updatedHistory = packageHistory.map(order =>
-        order.id === orderId ? { ...order, status: 'received' } : order
-      );
+    if (orderDetails && enteredCode === orderDetails.code) { // Assuming orderDetails.code exists
+      try {
+        const orderRef = doc(database, 'products', selectedProductId);
+        await updateDoc(orderRef, { status: 'received' });
 
-      setPackageHistory(updatedHistory);
-      filterOrdersByStatus(selectedTab, updatedHistory);
-    } catch (error) {
-      console.error('Error confirming delivery: ', error);
+        const updatedHistory = packageHistory.map(order =>
+          order.id === selectedProductId ? { ...order, status: 'received' } : order
+        );
+
+        setPackageHistory(updatedHistory);
+        filterOrdersByStatus(selectedTab, updatedHistory);
+        setConfirmModalVisible(false);
+      } catch (error) {
+        console.error('Error confirming delivery: ', error);
+      }
+    } else {
+      alert('Invalid code. Please try again.');
     }
   };
 
@@ -292,6 +307,14 @@ export default function History() {
   useEffect(() => {
     filterOrdersByStatus(selectedTab, packageHistory);
   }, [selectedTab, packageHistory]);
+
+
+  useEffect(() => {
+    if (confirmModalVisible && codeInputRef.current) {
+      codeInputRef.current.focus();
+    }
+  }, [confirmModalVisible]);
+
 
   return (
     <HistoryContainer>
@@ -397,6 +420,51 @@ export default function History() {
           </View>
         </TouchableWithoutFeedback>
       </Modal>
+
+      <Modal visible={confirmModalVisible} animationType="slide" transparent={true}>
+        <TouchableWithoutFeedback onPress={() => setConfirmModalVisible(false)}>
+          <View
+            style={{
+              flex: 1,
+              justifyContent: 'center',
+              alignItems: 'center',
+              backgroundColor: 'rgba(0,0,0,0.5)',
+            }}
+          >
+            <View
+              style={{
+                width: Dimensions.get('window').width - 40,
+                backgroundColor: '#fff',
+                padding: 20,
+                borderRadius: 10,
+              }}
+            >
+              <Text style={{ fontSize: 16, fontWeight: '700', marginBottom: 20 }}>Confirmar Entrega</Text>
+              <TouchableWithoutFeedback>
+                <View>
+                  <TextInput
+                    ref={codeInputRef}
+                    style={{
+                      height: 40,
+                      borderColor: 'gray',
+                      borderWidth: 1,
+                      marginBottom: 20,
+                      paddingLeft: 10,
+                    }}
+                    placeholder="Digite o código"
+                    value={enteredCode}
+                    onChangeText={setEnteredCode}
+                  />
+                </View>
+              </TouchableWithoutFeedback>
+              <ConfirmButton onPress={verifyAndConfirmDelivery}>
+                <ConfirmButtonText>Confirmar</ConfirmButtonText>
+              </ConfirmButton>
+            </View>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
+
     </HistoryContainer>
   );
 }
