@@ -396,19 +396,20 @@ const SectionTitle = styled(Text)`
 
 const OrderStatusCard = styled(View)<{ lastIndex?: boolean; statusColor?: string }>`
   display: flex;
+  justify-content: space-between;
   gap: 8px;
   border-radius: 8px;
   border-width: 1px;
   border-color: ${(props) => props.statusColor || '#000'};
   width: 200px;
   margin-right: ${(props) => (props.lastIndex ? '0' : '16px')};
-  overflow: hidden;
 `;
 
 const StatusCardContainer = styled(View)`
   display: flex;
   gap: 4px;
   padding: 16px 16px 8px;
+  margin: auto 0;
 `;
 
 const StatusCardTitle = styled(Text)`
