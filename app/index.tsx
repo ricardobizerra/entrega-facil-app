@@ -5,7 +5,7 @@ import { database } from '@/config/firebaseConfig';
 import { useRouter } from 'expo-router';
 import { FontAwesome } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Logo from '@/assets/images/Logo.svg';
+import Logo from '@/assets/images/logo/LogoLogin.svg';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -46,7 +46,8 @@ export default function LoginScreen() {
   return (
     <View style={styles.container}>
       <Logo/>
-      <Text style={styles.subtitle}>Login</Text>
+      <Text style={styles.title}>Ei! Tá Entregue!</Text>
+      <Text style={styles.subtitle}>Faça a diferença na sua comunidade</Text>
       <View style={styles.inputContainer}>
         <FontAwesome name="envelope" size={24} color="black" />
         <TextInput
@@ -99,14 +100,15 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#FFA500',
-    marginVertical: 20,
+    color: '#000',
+    marginTop: 20,
   },
   subtitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
+    fontSize: 14,
+    fontWeight: 'regular',
     color: '#000',
     marginBottom: 20,
+    textAlign: 'center',
   },
   inputContainer: {
     flexDirection: 'row',
@@ -145,5 +147,7 @@ const styles = StyleSheet.create({
   registerLink: {
     color: '#FFA500',
     fontWeight: 'bold',
+    textDecorationLine: 'underline',
+    textDecorationColor: '#FFA500',
   },
 });
