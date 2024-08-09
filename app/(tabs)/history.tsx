@@ -2,36 +2,81 @@ import React, { useState, useEffect, useRef } from 'react';
 import { database } from '@/config/firebaseConfig';
 import { collection, getDocs, query, where, Timestamp, doc, updateDoc } from 'firebase/firestore';
 import styled from 'styled-components/native';
-import { Text, View, TouchableOpacity, TextInput, Modal, Dimensions, TouchableWithoutFeedback } from 'react-native';
+import { Text, View, TouchableOpacity, TextInput, Modal, Dimensions, TouchableWithoutFeedback, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { format } from 'date-fns';
+import { format, isToday, isTomorrow, isYesterday, subDays, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import Logo from '@/assets/images/logo-no-text.svg';
 import SearchIcon from '@/assets/images/search-icon.svg';
 import OrderDetail from '../orderDetail';
+import Wave from '@/assets/images/wave.svg';
+import { Header } from 'react-native/Libraries/NewAppScreen';
+
+const ActionDetails = styled(View)`
+  width: 100%;
+`;
+
+const WaveContainer = styled(View)`
+  align-items: flex-end;
+  margin-top: 20;
+`;
+
+const HeaderContainer = styled(View)`
+  width: 100%;
+  flex-direction: row;
+  align-items: center;
+  box-sizing: border-box;
+`;
+
+const HeaderText = styled(Text)`
+  color: #F2F2F2;
+  font-size: 20px;
+  font-weight: 700;
+  text-align: left;
+  margin-left: 40;
+  flex: 1;
+`;
+
+const HistoryContainerBackground = styled(View)`
+  flex: 1;
+  background-color: #3A3A3A;
+`;
 
 const HistoryContainer = styled(View)`
   flex: 1;
   padding: 10px;
   background-color: #f5f5f5;
+  border-top-left-radius: 30px;
+  border-top-right-radius: 30px;
 `;
 
 const HistoryItem = styled(View)`
   background-color: #ffffff;
-  padding: 15px;
+  padding: 25px;
   margin-bottom: 20px;
   border-radius: 20px;
   flex-direction: row;
-  align-items: center;
+  flex-wrap: wrap;
+  align-items: flex-start; /* Ensure alignment to the top */
 `;
+
+
 
 const HistoryText = styled(Text)`
   color: #3a3a3a;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 400;
   margin-right: 10px;
-  margin-bottom: 4px;
+`;
+
+const ExtraText = styled(Text)`
+  color: #3a3a3a;
+  font-size: 12px;
+  font-weight: 400;
+  margin-right: 10px;
+  margin-top: 10px;
+  margin-bottom: 10px;
 `;
 
 const HistoryTitleText = styled(Text)`
@@ -77,6 +122,18 @@ interface TabTextProps {
   selected: boolean;
 }
 
+const StyledImage = styled(Image)`
+  width: 64px;
+  height: 64px;
+  border-radius: 12px;
+  margin-right: 10px;
+`;
+
+const StyledButtonContainer = styled(View)`
+  width: 100%;
+  margin-right: 10px;
+`;
+
 const TabText = styled(Text)<TabTextProps>`
   font-size: 16px;
   font-weight: 500;
@@ -97,7 +154,7 @@ const SearchContainer = styled(View)`
 `;
 
 const SearchInput = styled(TextInput)`
-  background-color: #ffffff;
+  background-color: #EFEEEE;
   padding: 10px;
   border-radius: 10px;
   width: 90%;
@@ -122,9 +179,9 @@ const AcceptButtonText = styled(Text)`
 `;
 
 const ConfirmButton = styled(TouchableOpacity)`
-  background-color: #FF5733;
+  background-color: #DB3319;
   padding: 10px;
-  border-radius: 10px;
+  border-radius: 25px;
   margin-top: 10px;
 `;
 
@@ -157,13 +214,19 @@ export interface PackageHistoryItem {
   delivery_actions: { [key: string]: { action: string; timestamp: Timestamp; notification_action?: string; } };
   accepted?: boolean;
   code: string;
+  icon: string;
+  address: string;
+  client_name: string;
+  sensitive: boolean;
+  weight: 'light' | 'medium';
+  order_name: string;
 }
 
 export default function History() {
   const router = useRouter();
   const [clientId, setClientId] = useState<string | null>(null);
   const [packageHistory, setPackageHistory] = useState<PackageHistoryItem[]>([]);
-  const [selectedTab, setSelectedTab] = useState<'Novos' | 'Em andamento' | 'Finalizado'>('Novos');
+  const [selectedTab, setSelectedTab] = useState<'Novos' | 'Em andamento' | 'Finalizados'>('Novos');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [filteredOrders, setFilteredOrders] = useState<PackageHistoryItem[]>([]);
   const [selectedProductId, setSelectedProductId] = useState<string>('');
@@ -216,7 +279,7 @@ export default function History() {
   };
 
   const filterOrdersByStatus = (
-    status: 'Novos' | 'Em andamento' | 'Finalizado',
+    status: 'Novos' | 'Em andamento' | 'Finalizados',
     orders: PackageHistoryItem[]
   ) => {
     let filtered: PackageHistoryItem[];
@@ -227,11 +290,22 @@ export default function History() {
       case 'Em andamento':
         filtered = orders.filter(order => order.accepted && order.status !== 'received');
         break;
-      case 'Finalizado':
+      case 'Finalizados':
         filtered = orders.filter(order => order.status === 'received');
         break;
     }
     setFilteredOrders(filtered);
+  };
+
+  const getWeightText = (weight: 'light' | 'medium') => {
+    switch (weight) {
+      case 'medium':
+        return 'Peso moderado (5-10kg)';
+      case 'light':
+        return 'Peso leve (1-5kg)';
+      default:
+        return '';
+    }
   };
 
   const handleOrderDetail = (item_id: string) => {
@@ -315,156 +389,190 @@ export default function History() {
     }
   }, [confirmModalVisible]);
 
+  const getRelativeDate = (date: Date) => {
+    const now = new Date();
+  
+    if (isToday(date)) {
+      return format(date, "'Hoje às' HH:mm", { locale: ptBR });
+    } else if (isTomorrow(date)) {
+      return format(date, "'Amanhã às' HH:mm", { locale: ptBR });
+    } else if (isYesterday(date)) {
+      return format(date, "'Ontem às' HH:mm", { locale: ptBR });
+    } else {
+      return format(date, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
+    }
+  };
 
   return (
-    <HistoryContainer>
-      <TabsContainer>
-        <TouchableOpacity onPress={() => setSelectedTab('Novos')}>
-          <TabText selected={selectedTab === 'Novos'}>Novos</TabText>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => setSelectedTab('Em andamento')}>
-          <TabText selected={selectedTab === 'Em andamento'}>Em andamento</TabText>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => setSelectedTab('Finalizado')}>
-          <TabText selected={selectedTab === 'Finalizado'}>Finalizado</TabText>
-        </TouchableOpacity>
-      </TabsContainer>
+    <HistoryContainerBackground>
+      <HeaderContainer>
+        <HeaderText>Pedidos</HeaderText>
+        <WaveContainer>
+          <Wave />
+        </WaveContainer>
+      </HeaderContainer>
 
-      <SearchContainer>
-        <SearchIconContainer>
-          <SearchIcon />
-        </SearchIconContainer>
-        <SearchInput
-          placeholder="Pesquise por um pedido"
-          value={searchQuery}
-          onChangeText={handleSearch}
-        />
-      </SearchContainer>
+      <HistoryContainer>
+        <TabsContainer>
+          <TouchableOpacity onPress={() => setSelectedTab('Novos')}>
+            <TabText selected={selectedTab === 'Novos'}>Novos</TabText>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => setSelectedTab('Em andamento')}>
+            <TabText selected={selectedTab === 'Em andamento'}>Em andamento</TabText>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => setSelectedTab('Finalizados')}>
+            <TabText selected={selectedTab === 'Finalizados'}>Finalizados</TabText>
+          </TouchableOpacity>
+        </TabsContainer>
 
-      {filteredOrders.map((item, index) => (
-        <TouchableOpacity key={index} onPress={() => handleOrderDetail(item.id)}>
-          <HistoryItem>
-            <StyledLogo />
-            <View style={{ flex: 1 }}>
-              <HistoryTitleText>Pedido {item.id}</HistoryTitleText>
-              <HistoryText>
-                Previsão de entrega:{' '}
-                {format(item.arrival_date.toDate(), "dd 'de' MMMM 'de' yyyy", {
-                  locale: ptBR,
-                })}
-              </HistoryText>
-              <ActionContainer>
-                <ActionDot
-                  style={{
-                    backgroundColor: getStatusColor(item.status.toLowerCase()),
-                  }}
-                />
-                <HistoryText
-                  numberOfLines={1}
-                  ellipsizeMode="tail"
-                  style={{ flex: 1 }}
-                >
-                  {getLastAction(item.delivery_actions).action}
+        <SearchContainer>
+          <SearchIconContainer>
+            <SearchIcon />
+          </SearchIconContainer>
+          <SearchInput
+            placeholder="Pesquise por um pedido"
+            value={searchQuery}
+            onChangeText={handleSearch}
+          />
+        </SearchContainer>
+
+        {filteredOrders.map((item, index) => (
+          <TouchableOpacity key={index} onPress={() => handleOrderDetail(item.id)}>
+            <HistoryItem>
+              <StyledImage source={{ uri: item.icon }} />
+              <View style={{ flex: 1 }}>
+                <HistoryTitleText>Pedido {item.order_name}</HistoryTitleText>
+                <HistoryText>
+                  {item.status === 'received'
+                      ? `Entregue em ${item.address}`
+                      : `Entregar em ${item.address}`
+                  }
+                  <br />
+                  Ao responsável {item.client_name}
                 </HistoryText>
-                <HistoryText
-                  numberOfLines={1}
-                  ellipsizeMode="tail"
-                  style={{ flex: 1 }}
-                >
-                  {getLastAction(item.delivery_actions).timestamp}
-                </HistoryText>
-              </ActionContainer>
-              {selectedTab === 'Novos' && (
-                <AcceptButton onPress={() => acceptOrder(item.id)}>
-                  <AcceptButtonText>Aceitar</AcceptButtonText>
-                </AcceptButton>
-              )}
-              {selectedTab === 'Em andamento' && (
-                <ConfirmButton onPress={() => confirmDelivery(item.id)}>
-                  <ConfirmButtonText>Confirmar Entrega</ConfirmButtonText>
-                </ConfirmButton>
-              )}
-            </View>
-          </HistoryItem>
-        </TouchableOpacity>
-      ))}
-
-      <Modal
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <TouchableWithoutFeedback onPress={() => setModalVisible(false)}>
-          <View
-            style={{
-              flex: 1,
-              justifyContent: 'center',
-              alignItems: 'center',
-              backgroundColor: 'rgba(0, 0, 0, 0.5)',
-            }}
-          >
-            <View
-              style={{
-                width: Dimensions.get('window').width * 0.9,
-                backgroundColor: 'white',
-                borderRadius: 10,
-                padding: 20,
-              }}
-            >
-              <OrderDetail
-                client_id={clientId}
-                product_id={selectedProductId}
-                closeModal={() => setModalVisible(false)}
-              />
-            </View>
-          </View>
-        </TouchableWithoutFeedback>
-      </Modal>
-
-      <Modal visible={confirmModalVisible} animationType="slide" transparent={true}>
-        <TouchableWithoutFeedback onPress={() => setConfirmModalVisible(false)}>
-          <View
-            style={{
-              flex: 1,
-              justifyContent: 'center',
-              alignItems: 'center',
-              backgroundColor: 'rgba(0,0,0,0.5)',
-            }}
-          >
-            <View
-              style={{
-                width: Dimensions.get('window').width - 40,
-                backgroundColor: '#fff',
-                padding: 20,
-                borderRadius: 10,
-              }}
-            >
-              <Text style={{ fontSize: 16, fontWeight: '700', marginBottom: 20 }}>Confirmar Entrega</Text>
-              <TouchableWithoutFeedback>
-                <View>
-                  <TextInput
-                    ref={codeInputRef}
+                <ExtraText>
+                  {getWeightText(item.weight)}
+                  <br />
+                  Objeto sensível? {item.sensitive ? 'Sim' : 'Não'}
+                </ExtraText>
+              </View>
+              <ActionDetails>
+                <ActionContainer>
+                  <ActionDot
                     style={{
-                      height: 40,
-                      borderColor: 'gray',
-                      borderWidth: 1,
-                      marginBottom: 20,
-                      paddingLeft: 10,
+                      backgroundColor: getStatusColor(item.status.toLowerCase()),
                     }}
-                    placeholder="Digite o código"
-                    value={enteredCode}
-                    onChangeText={setEnteredCode}
                   />
-                </View>
-              </TouchableWithoutFeedback>
-              <ConfirmButton onPress={verifyAndConfirmDelivery}>
-                <ConfirmButtonText>Confirmar</ConfirmButtonText>
-              </ConfirmButton>
-            </View>
-          </View>
-        </TouchableWithoutFeedback>
-      </Modal>
+                  <HistoryText
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                    style={{ flex: 1 }}
+                  >
+                    {item.status === 'received'
+                      ? `Pedido entregue`
+                      : `Prazo de entrega`
+                    }
+                  </HistoryText>
+                  <HistoryText
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                    style={{ flex: 1 }}
+                  >
+                      {getRelativeDate(item.arrival_date.toDate())}
+                  </HistoryText>
+                </ActionContainer>
+                {selectedTab === 'Novos' && (
+                  <AcceptButton onPress={() => acceptOrder(item.id)}>
+                    <AcceptButtonText>Aceitar</AcceptButtonText>
+                  </AcceptButton>
+                )}
+                {selectedTab === 'Em andamento' && (
+                  <ConfirmButton onPress={() => confirmDelivery(item.id)}>
+                    <ConfirmButtonText>Pedido entregue</ConfirmButtonText>
+                  </ConfirmButton>
+                )}
+                </ActionDetails>
 
-    </HistoryContainer>
+            </HistoryItem>
+          </TouchableOpacity>
+        ))}
+
+        <Modal
+          transparent={true}
+          visible={modalVisible}
+          onRequestClose={() => setModalVisible(false)}
+        >
+          <TouchableWithoutFeedback onPress={() => setModalVisible(false)}>
+            <View
+              style={{
+                flex: 1,
+                justifyContent: 'center',
+                alignItems: 'center',
+              }}
+            >
+              <View
+                style={{
+                  width: Dimensions.get('window').width * 1,
+                  height: Dimensions.get('window').height * 0.9,
+                  backgroundColor: 'white',
+                  borderRadius: 30,
+                  padding: 20,
+                }}
+              >
+                <OrderDetail
+                  client_id={clientId}
+                  product_id={selectedProductId}
+                  closeModal={() => setModalVisible(false)}
+                />
+              </View>
+            </View>
+          </TouchableWithoutFeedback>
+        </Modal>
+
+        <Modal visible={confirmModalVisible} animationType="slide" transparent={true}>
+          <TouchableWithoutFeedback onPress={() => setConfirmModalVisible(false)}>
+            <View
+              style={{
+                flex: 1,
+                justifyContent: 'center',
+                alignItems: 'center',
+                backgroundColor: 'rgba(0,0,0,0.5)',
+              }}
+            >
+              <View
+                style={{
+                  width: Dimensions.get('window').width - 40,
+                  backgroundColor: '#fff',
+                  padding: 20,
+                  borderRadius: 10,
+                }}
+              >
+                <Text style={{ fontSize: 16, fontWeight: '700', marginBottom: 20 }}>Confirmar Entrega</Text>
+                <TouchableWithoutFeedback>
+                  <View>
+                    <TextInput
+                      ref={codeInputRef}
+                      style={{
+                        height: 40,
+                        borderColor: 'gray',
+                        borderWidth: 1,
+                        marginBottom: 20,
+                        paddingLeft: 10,
+                      }}
+                      placeholder="Digite o código"
+                      value={enteredCode}
+                      onChangeText={setEnteredCode}
+                    />
+                  </View>
+                </TouchableWithoutFeedback>
+                <ConfirmButton onPress={verifyAndConfirmDelivery}>
+                  <ConfirmButtonText>Confirmar</ConfirmButtonText>
+                </ConfirmButton>
+              </View>
+            </View>
+          </TouchableWithoutFeedback>
+        </Modal>
+      </HistoryContainer>
+    </HistoryContainerBackground>
   );
 }

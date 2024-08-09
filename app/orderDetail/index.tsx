@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { database } from '@/config/firebaseConfig';
 import { collection, getDocs, query, where, Timestamp } from 'firebase/firestore';
 import styled from 'styled-components/native';
-import { Text, View } from 'react-native';
+import { Text, View, Image } from 'react-native';
 import { useRouter } from 'expo-router';
-import { format } from 'date-fns';
+import { format, isToday, isTomorrow, isYesterday, subDays, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import Logo from '@/assets/images/logo-no-text.svg';
 
@@ -14,6 +14,34 @@ const OrderDetailContainer = styled(View)`
   align-items: left;
   padding: 10px;
   background-color: #ffffff;
+`;
+
+
+const ActionContainer = styled(View)`
+  flex-direction: row;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+`;
+
+export const getStatusColor = (status: string): string => {
+  switch (status) {
+    case 'processing':
+      return '#FF5733';
+    case 'sent':
+      return '#F5A623';
+    case 'received':
+      return '#4CAF50';
+    default:
+      return '#000000';
+  }
+};
+
+const StyledImage = styled(Image)`
+  width: 200;
+  height: 200;
+  border-radius: 12px;
+  margin-right: 10px;
 `;
 
 const OrderDetailIcon = styled(View)`
@@ -36,11 +64,11 @@ const OrderDetailItem = styled(View)`
   align-items: center; /* Center items vertically */
 `;
 
-const ActionDot = styled(View)<{ isLastDot?: boolean }>`
-  width: 14px;
-  height: 14px;
-  border-radius: 7px;
-  background-color: ${props => (props.isLastDot ? '#000' : '#3ACB48')}; /* Black if last dot, green otherwise */
+const ActionDot = styled(View)`
+  width: 8px;
+  height: 8px;
+  border-radius: 4px;
+  margin-right: 8px;
 `;
 
 const ActionTextContainer = styled(View)`
@@ -69,6 +97,8 @@ interface PackageOrderDetailItem {
   arrival_date: Timestamp;
   delivery_actions: { [key: string]: { action: string; timestamp: Timestamp } };
   address: string; // Add the address attribute
+  icon: string;
+  order_name: string;
 }
 
 interface OrderDetailProps {
@@ -115,15 +145,66 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ client_id, product_id, closeM
     );
   }
 
+  const getLastAction = (delivery_actions: {
+    [key: string]: { action: string; timestamp: Timestamp };
+  }) => {
+    const actions = Object.values(delivery_actions);
+    if (actions.length === 0) return { action: 'Nenhuma ação disponível', timestamp: '' };
+
+    actions.sort(
+      (a, b) => b.timestamp.toDate().getTime() - a.timestamp.toDate().getTime()
+    );
+    const lastAction = actions[0];
+    return {
+      action: lastAction.action,
+      timestamp: format(lastAction.timestamp.toDate(), "dd/MM/yyyy HH:mm", {
+        locale: ptBR,
+      }),
+    };
+  };
+
+  const getRelativeDate = (date: Date) => {
+    const now = new Date();
+  
+    if (isToday(date)) {
+      return format(date, "'hoje às' HH:mm", { locale: ptBR });
+    } else if (isTomorrow(date)) {
+      return format(date, "'amanhã às' HH:mm", { locale: ptBR });
+    } else if (isYesterday(date)) {
+      return format(date, "'ontem às' HH:mm", { locale: ptBR });
+    } else {
+      return format(date, "'em' dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
+    }
+  };
+
+
   return (  
     <OrderDetailContainer>
       {packageOrderDetail.map((item, index) => (
         <View key={index}>
           <OrderDetailIcon>
-            <LogoImage/>
             <View>
-              <OrderTitleText>Status do pedido</OrderTitleText>
-              <OrderTitleText>Produto {item.id}</OrderTitleText>
+              <OrderTitleText>Pedido {item.order_name}</OrderTitleText>
+              <ActionContainer>
+                  <ActionDot
+                    style={{
+                      backgroundColor: getStatusColor(item.status.toLowerCase()),
+                    }}
+                  />
+                  <OrderDetailText> {item.status === 'received'
+                      ? `Finalizado`
+                      : `Em andamento`
+                  } </OrderDetailText>
+
+                  <OrderDetailText>
+                    {item.status === 'received'
+                        ? `Finalizado ${getRelativeDate(item.arrival_date.toDate())}`
+                        : `Iniciado ${getRelativeDate(item.creation_date.toDate())}`
+                    }                   
+                  </OrderDetailText>
+              </ActionContainer>
+              <StyledImage source={{ uri: item.icon }} />
+              <OrderTitleText>Dados do pedido</OrderTitleText>
               <OrderDetailText>Previsão de entrega:{' '}
                 {format(item.arrival_date.toDate(), "dd/MM/yyyy HH:mm", {
                   locale: ptBR,
@@ -132,18 +213,6 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ client_id, product_id, closeM
               <OrderDetailText>Endereço: {item.address}</OrderDetailText>
             </View>
           </OrderDetailIcon>
-          <View>          
-            {/* Rendering delivery_actions */}
-            {Object.keys(item.delivery_actions).map((key, actionIndex) => (
-              <OrderDetailItem key={actionIndex}>
-                <ActionDot isLastDot={actionIndex === Object.keys(item.delivery_actions).length - 1 && item.status === 'sent'} />
-                <ActionTextContainer>
-                  <Text>{item.delivery_actions[key].action}</Text>
-                  <Text>{format(item.delivery_actions[key].timestamp.toDate(), "dd/MM/yyyy HH:mm")}</Text>
-                </ActionTextContainer>
-              </OrderDetailItem>
-            ))}
-          </View>
         </View>
       ))}
     </OrderDetailContainer>
