@@ -4,10 +4,14 @@ import * as Location from 'expo-location';
 import { LocationObject } from 'expo-location'; // Importando o tipo LocationObject
 import Wave from '@/assets/images/wave.svg';
 import styled from 'styled-components/native';
+import { database } from '@/config/firebaseConfig';
 import How_use from '@/assets/images/instructions.svg';
 import Actions from '@/assets/images/feedback_e_dicas_2.svg';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { TouchableOpacity } from 'react-native'; // Importe TouchableOpacity
+import MapView, { Marker } from 'react-native-maps';
+import { collection, getDocs, query, where, Timestamp, doc, updateDoc } from 'firebase/firestore';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface User {
   id?: string;
@@ -17,8 +21,6 @@ interface User {
   location?: string;
 }
 
-import MapView, { Marker } from 'react-native-maps';
-
 const MapContainer = styled(MapView)`
   width: 100%;
   height: 300px;
@@ -27,15 +29,64 @@ const MapContainer = styled(MapView)`
   overflow: hidden;
 `;
 
+export interface PackageHistoryItem {
+  id: string;
+  status: string;
+  client_id: string;
+  creation_date: Timestamp;
+  arrival_date: Timestamp;
+  delivery_actions: { [key: string]: { action: string; timestamp: Timestamp; notification_action?: string; } };
+  accepted?: boolean;
+  code: string;
+  icon: string;
+  address: string;
+  client_name: string;
+  sensitive: boolean;
+  weight: 'light' | 'medium';
+  order_name: string;
+  storage_code: string;
+}
+
 export default function HomeScreen() {
   const router = useRouter();
   const [location, setLocation] = useState<LocationObject | null>(null); // Tipagem ajustada
-
+  const [clientId, setClientId] = useState<string | null>(null);
   const { name } = useLocalSearchParams();
+  const [packageHistory, setPackageHistory] = useState<PackageHistoryItem[]>([]);
 
   const [user] = useState<User | undefined>({
     name: name as string,
   });
+
+  const fetchHistoryFromFirebase = async (clientId: string) => {
+    try {
+      const q = query(collection(database, 'products'), where('client_id', '==', clientId));
+      const querySnapshot = await getDocs(q);
+      const newEntries = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+        delivery_actions: doc.data().delivery_actions || {},
+      })) as PackageHistoryItem[];
+      setPackageHistory(newEntries);
+    } catch (error) {
+      console.error('Error fetching data: ', error);
+    }
+  };
+
+
+  const getClientId = async () => {
+    try {
+      const clientId = await AsyncStorage.getItem('userEmail');
+      if (clientId) {
+        setClientId(clientId);
+        fetchHistoryFromFirebase(clientId);
+      } else {
+        console.log('No client ID found');
+      }
+    } catch (error) {
+      console.error('Error retrieving client ID: ', error);
+    }
+  };
 
   useEffect(() => {
     (async () => {
