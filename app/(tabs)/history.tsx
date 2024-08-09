@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { database } from '@/config/firebaseConfig';
 import { collection, getDocs, query, where, Timestamp, doc, updateDoc } from 'firebase/firestore';
 import styled from 'styled-components/native';
-import { Text, View, TouchableOpacity, TextInput, Modal, Dimensions, TouchableWithoutFeedback, Image } from 'react-native';
+import { Text, View, TouchableOpacity, TextInput, Modal, Dimensions, TouchableWithoutFeedback, Image, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { format, isToday, isTomorrow, isYesterday, subDays, addDays } from 'date-fns';
@@ -168,9 +168,16 @@ const SearchIconContainer = styled(View)`
 `;
 
 const AcceptButton = styled(TouchableOpacity)`
-  background-color: #4CAF50;
+  background-color: #DB3319;
   padding: 10px;
-  border-radius: 10px;
+  border-radius: 25px;
+  margin-top: 10px;
+`;
+
+const RejectButton = styled(TouchableOpacity)`
+  background-color: #3A3A3A;
+  padding: 10px;
+  border-radius: 25px;
   margin-top: 10px;
 `;
 
@@ -223,13 +230,14 @@ export interface PackageHistoryItem {
   sensitive: boolean;
   weight: 'light' | 'medium';
   order_name: string;
+  storage_code: string;
 }
 
 export default function History() {
   const router = useRouter();
   const [clientId, setClientId] = useState<string | null>(null);
   const [packageHistory, setPackageHistory] = useState<PackageHistoryItem[]>([]);
-  const [selectedTab, setSelectedTab] = useState<'Novos' | 'Em andamento' | 'Finalizados'>('Novos');
+  const [selectedTab, setSelectedTab] = useState<'Pendentes' | 'Em andamento' | 'Finalizados'>('Pendentes');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [filteredOrders, setFilteredOrders] = useState<PackageHistoryItem[]>([]);
   const [selectedProductId, setSelectedProductId] = useState<string>('');
@@ -272,7 +280,7 @@ export default function History() {
   const handleSearch = (query: string) => {
     setSearchQuery(query);
     const filtered = filteredOrders.filter((item) =>
-      item.id.toLowerCase().includes(query.toLowerCase())
+      item.order_name.toLowerCase().includes(query.toLowerCase())
     );
     setFilteredOrders(filtered);
 
@@ -282,19 +290,19 @@ export default function History() {
   };
 
   const filterOrdersByStatus = (
-    status: 'Novos' | 'Em andamento' | 'Finalizados',
+    status: 'Pendentes' | 'Em andamento' | 'Finalizados',
     orders: PackageHistoryItem[]
   ) => {
     let filtered: PackageHistoryItem[];
     switch (status) {
-      case 'Novos':
+      case 'Pendentes':
         filtered = orders.filter(order => !order.accepted);
         break;
       case 'Em andamento':
-        filtered = orders.filter(order => order.accepted && order.status !== 'received');
+        filtered = orders.filter(order => order.accepted && order.status !== 'received' && order.status !== 'canceled');
         break;
       case 'Finalizados':
-        filtered = orders.filter(order => order.status === 'received');
+        filtered = orders.filter(order => order.status === 'received' || order.status === 'canceled');
         break;
     }
     setFilteredOrders(filtered);
@@ -350,6 +358,23 @@ export default function History() {
     }
   };
 
+  const rejectOrder = async (orderId: string) => {
+    try {
+      const orderRef = doc(database, 'products', orderId);
+      await updateDoc(orderRef, { accepted: true, status: 'canceled' });
+
+      const updatedHistory = packageHistory.map(order =>
+        order.id === orderId ? { ...order, accepted: true } : order
+      );
+
+      setPackageHistory(updatedHistory);
+      filterOrdersByStatus(selectedTab, updatedHistory);
+    } catch (error) {
+      console.error('Error accepting order: ', error);
+    }
+  };
+
+
   const confirmDelivery = async (orderId: string) => {
     setSelectedProductId(orderId);
     setConfirmModalVisible(true);
@@ -376,6 +401,34 @@ export default function History() {
       alert('Invalid code. Please try again.');
     }
   };
+
+  const confirmStorage = async (orderId: string) => {
+    setSelectedProductId(orderId);
+    setConfirmModalVisible(true);
+  };
+  const verifyAndConfirmStorage = async () => {
+    const orderDetails = packageHistory.find(order => order.id === selectedProductId);
+
+    if (orderDetails && enteredCode === orderDetails.storage_code) { // Assuming orderDetails.code exists
+      try {
+        const orderRef = doc(database, 'products', selectedProductId);
+        await updateDoc(orderRef, { status: 'sent' });
+
+        const updatedHistory = packageHistory.map(order =>
+          order.id === selectedProductId ? { ...order, status: 'sent' } : order
+        );
+
+        setPackageHistory(updatedHistory);
+        filterOrdersByStatus(selectedTab, updatedHistory);
+        setConfirmModalVisible(false);
+      } catch (error) {
+        console.error('Error confirming delivery: ', error);
+      }
+    } else {
+      alert('Invalid code. Please try again.');
+    }
+  };
+
 
   useEffect(() => {
     getClientId();
@@ -416,9 +469,11 @@ export default function History() {
       </HeaderContainer>
 
       <HistoryContainer>
+      <ScrollView>
+
         <TabsContainer>
-          <TouchableOpacity onPress={() => setSelectedTab('Novos')}>
-            <TabText selected={selectedTab === 'Novos'}>Novos</TabText>
+          <TouchableOpacity onPress={() => setSelectedTab('Pendentes')}>
+            <TabText selected={selectedTab === 'Pendentes'}>Pendentes</TabText>
           </TouchableOpacity>
           <TouchableOpacity onPress={() => setSelectedTab('Em andamento')}>
             <TabText selected={selectedTab === 'Em andamento'}>Em andamento</TabText>
@@ -462,39 +517,55 @@ export default function History() {
               </View>
               <ActionDetails>
                 <ActionContainer>
+                {item.accepted === true && (
                   <ActionDot
                     style={{
                       backgroundColor: getStatusColor(item.status.toLowerCase()),
                     }}
-                  />
+                  />)}
+                  {item.accepted === true && (
                   <HistoryText
                     numberOfLines={1}
                     ellipsizeMode="tail"
                     style={{ flex: 1 }}
                   >
+                    
                     {item.status === 'received'
                       ? `Pedido entregue`
-                      : `Prazo de entrega`
+                      : item.status === 'canceled' ? `Entrega cancelada` : `Prazo de entrega`
                     }
-                  </HistoryText>
+                  </HistoryText>)}
+                  {item.accepted === true && (
                   <HistoryText
                     numberOfLines={1}
                     ellipsizeMode="tail"
                     style={{ flex: 1 }}
                   >
                       {getRelativeDate(item.arrival_date.toDate())}
-                  </HistoryText>
+                  </HistoryText>)}
                 </ActionContainer>
-                {selectedTab === 'Novos' && (
+                {selectedTab === 'Pendentes' && (
                   <AcceptButton onPress={() => acceptOrder(item.id)}>
                     <AcceptButtonText>Aceitar</AcceptButtonText>
                   </AcceptButton>
                 )}
-                {selectedTab === 'Em andamento' && (
+                {selectedTab === 'Pendentes' && (
+                  <RejectButton onPress={() => rejectOrder(item.id)}>
+                    <AcceptButtonText>Rejeitar</AcceptButtonText>
+                  </RejectButton>
+                )}
+                {selectedTab === 'Em andamento' && item.status.toLowerCase() === 'sent' && (
                   <ConfirmButton onPress={() => confirmDelivery(item.id)}>
-                    <ConfirmButtonText>Pedido entregue</ConfirmButtonText>
+                    <ConfirmButtonText>Marcar como entregue</ConfirmButtonText>
                   </ConfirmButton>
                 )}
+
+                {selectedTab === 'Em andamento' && item.status.toLowerCase() === 'processing' && (
+                  <ConfirmButton onPress={() => confirmStorage(item.id)}>
+                    <ConfirmButtonText>Autenticar com armazenador</ConfirmButtonText>
+                  </ConfirmButton>
+                )}
+
                 </ActionDetails>
 
             </HistoryItem>
@@ -571,13 +642,18 @@ export default function History() {
                     />
                   </View>
                 </TouchableWithoutFeedback>
-                <ConfirmButton onPress={verifyAndConfirmDelivery}>
+                {packageHistory.find(order => order.id === selectedProductId)?.status.toLowerCase() === 'sent' ? (<ConfirmButton onPress={verifyAndConfirmDelivery}>
                   <ConfirmButtonText>Confirmar</ConfirmButtonText>
-                </ConfirmButton>
+                </ConfirmButton>) : (<ConfirmButton onPress={verifyAndConfirmStorage}>
+                  <ConfirmButtonText>Confirmar</ConfirmButtonText>
+                </ConfirmButton>)}
+                
               </View>
             </View>
           </TouchableWithoutFeedback>
         </Modal>
+      </ScrollView>
+
       </HistoryContainer>
     </HistoryContainerBackground>
   );
