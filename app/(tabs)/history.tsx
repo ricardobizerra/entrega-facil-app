@@ -35,6 +35,7 @@ const HeaderText = styled(Text)`
   font-weight: 700;
   text-align: left;
   margin-left: 40;
+  margin-top: 10;
   flex: 1;
 `;
 
@@ -75,8 +76,7 @@ const ExtraText = styled(Text)`
   font-size: 12px;
   font-weight: 400;
   margin-right: 10px;
-  margin-top: 10px;
-  margin-bottom: 10px;
+  margin-top: 5px;
 `;
 
 const HistoryTitleText = styled(Text)`
@@ -109,6 +109,7 @@ const ActionContainer = styled(View)`
   flex-direction: row;
   align-items: center;
   flex-wrap: wrap;
+  margin-top: 10px;
 `;
 
 const TabsContainer = styled(View)`
@@ -122,7 +123,9 @@ interface TabTextProps {
   selected: boolean;
 }
 
-const StyledImage = styled(Image)`
+const StyledImage = styled(Image).attrs({
+  resizeMode: 'cover'
+})`
   width: 64px;
   height: 64px;
   border-radius: 12px;
@@ -447,12 +450,13 @@ export default function History() {
                       ? `Entregue em ${item.address}`
                       : `Entregar em ${item.address}`
                   }
-                  <br />
+                  </HistoryText>
+                  <HistoryText>
                   Ao responsável {item.client_name}
                 </HistoryText>
                 <ExtraText>
-                  {getWeightText(item.weight)}
-                  <br />
+                  {getWeightText(item.weight)}</ExtraText>
+                  <ExtraText>
                   Objeto sensível? {item.sensitive ? 'Sim' : 'Não'}
                 </ExtraText>
               </View>
@@ -502,7 +506,7 @@ export default function History() {
           visible={modalVisible}
           onRequestClose={() => setModalVisible(false)}
         >
-          <TouchableWithoutFeedback onPress={() => setModalVisible(false)}>
+          <TouchableWithoutFeedback>
             <View
               style={{
                 flex: 1,
@@ -513,10 +517,12 @@ export default function History() {
               <View
                 style={{
                   width: Dimensions.get('window').width * 1,
-                  height: Dimensions.get('window').height * 0.9,
+                  height: Dimensions.get('window').height * 0.8,
                   backgroundColor: 'white',
                   borderRadius: 30,
                   padding: 20,
+                  position: 'absolute',
+                  top: 20          
                 }}
               >
                 <OrderDetail

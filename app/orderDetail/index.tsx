@@ -2,11 +2,35 @@ import React, { useState, useEffect } from 'react';
 import { database } from '@/config/firebaseConfig';
 import { collection, getDocs, query, where, Timestamp } from 'firebase/firestore';
 import styled from 'styled-components/native';
-import { Text, View, Image } from 'react-native';
-import { useRouter } from 'expo-router';
-import { format, isToday, isTomorrow, isYesterday, subDays, addDays } from 'date-fns';
+import { Text, View, Image, TouchableOpacity, Dimensions } from 'react-native';
+import { format, isToday, isTomorrow, isYesterday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import Logo from '@/assets/images/logo-no-text.svg';
+import Back from '@/assets/images/chevron-left.svg';
+import MapView, { Marker } from 'react-native-maps';
+
+const MapContainer = styled(MapView)`
+  width: 100%;
+  height: 300px;
+  margin-top: 20px;
+  border-radius: 25px;
+  overflow: hidden;
+`;
+
+const HorizontalContainer = styled(View)`
+  flex-direction: row;
+  align-items: center;
+`;
+
+const LabelText = styled(Text)`
+  font-weight: bold;
+  margin-right: 10px;
+`;
+
+const ValueText = styled(Text)`
+  flex: 1;
+`;
+
 
 const OrderDetailContainer = styled(View)`
   display: flex;
@@ -16,6 +40,10 @@ const OrderDetailContainer = styled(View)`
   background-color: #ffffff;
 `;
 
+const BackButtonContainer = styled(View)`
+  padding: 10px;
+  align-items: flex-start;
+`;
 
 const ActionContainer = styled(View)`
   flex-direction: row;
@@ -37,9 +65,11 @@ export const getStatusColor = (status: string): string => {
   }
 };
 
-const StyledImage = styled(Image)`
-  width: 200;
-  height: 200;
+const StyledImage = styled(Image).attrs({
+  resizeMode: 'cover', // This ensures the image won't stretch and keeps its aspect ratio
+  width: Dimensions.get('window').width * 0.9
+})`
+  height: 200px;
   border-radius: 12px;
   margin-right: 10px;
 `;
@@ -86,7 +116,7 @@ const OrderTitleText = styled(Text)`
 const OrderDetailText = styled(Text)`
   color: #333333;
   font-size: 14px;
-  margin-right: 50px
+  margin-right: 50px;
 `;
 
 interface PackageOrderDetailItem {
@@ -96,19 +126,22 @@ interface PackageOrderDetailItem {
   creation_date: Timestamp;
   arrival_date: Timestamp;
   delivery_actions: { [key: string]: { action: string; timestamp: Timestamp } };
-  address: string; // Add the address attribute
+  address: string;
   icon: string;
   order_name: string;
+  weight: 'light' | 'medium';
+  sensitive: boolean;
+  client_name: string;
+  location: { latitude: number; longitude: number };
 }
 
 interface OrderDetailProps {
-  client_id: string | null; // Define client_id as a prop
+  client_id: string | null;
   product_id: string;
-  closeModal: () => void; // Add closeModal prop
+  closeModal: () => void;
 }
 
 const OrderDetail: React.FC<OrderDetailProps> = ({ client_id, product_id, closeModal }) => {
-  const router = useRouter();
   const [packageOrderDetail, setPackageOrderDetail] = useState<PackageOrderDetailItem[]>([]);
 
   const fetchOrderDetailFromFirebase = async () => {
@@ -130,7 +163,7 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ client_id, product_id, closeM
   };
 
   function handleBack() {
-    router.back();
+    closeModal();
   }
 
   useEffect(() => {
@@ -163,6 +196,17 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ client_id, product_id, closeM
     };
   };
 
+  const getWeightText = (weight: 'light' | 'medium') => {
+    switch (weight) {
+      case 'medium':
+        return 'Peso moderado (5-10kg)';
+      case 'light':
+        return 'Peso leve (1-5kg)';
+      default:
+        return '';
+    }
+  };
+
   const getRelativeDate = (date: Date) => {
     const now = new Date();
   
@@ -177,9 +221,14 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ client_id, product_id, closeM
     }
   };
 
-
-  return (  
+  return (
     <OrderDetailContainer>
+      <BackButtonContainer>
+        <TouchableOpacity onPress={handleBack}>
+          <Back />
+        </TouchableOpacity>
+      </BackButtonContainer>
+
       {packageOrderDetail.map((item, index) => (
         <View key={index}>
           <OrderDetailIcon>
@@ -203,14 +252,52 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ client_id, product_id, closeM
                     }                   
                   </OrderDetailText>
               </ActionContainer>
-              <StyledImage source={{ uri: item.icon }} />
               <OrderTitleText>Dados do pedido</OrderTitleText>
-              <OrderDetailText>Previsão de entrega:{' '}
-                {format(item.arrival_date.toDate(), "dd/MM/yyyy HH:mm", {
-                  locale: ptBR,
-                })}
+              <StyledImage source={{ uri: item.icon }} style={{marginBottom: 20}} />
+
+              <OrderDetailText>
+                  {getWeightText(item.weight)}                </OrderDetailText>
+              <OrderDetailText>
+                  Objeto sensível? {item.sensitive ? 'Sim' : 'Não'}
               </OrderDetailText>
-              <OrderDetailText>Endereço: {item.address}</OrderDetailText>
+              <View style={{marginTop: 10}}>
+              <HorizontalContainer>
+                <LabelText
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                >
+                    {item.status === 'received'
+                      ? `Pedido entregue`
+                      : `Prazo de entrega`
+                    }
+                  </LabelText>
+                  <ValueText
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                  >
+                      {getRelativeDate(item.arrival_date.toDate())}
+                  </ValueText>
+                  </HorizontalContainer>
+                  <HorizontalContainer>
+                <LabelText>Entregar para</LabelText>
+                <ValueText>{item.client_name}</ValueText>
+              </HorizontalContainer>
+              </View>              
+              <OrderDetailText style={{ fontWeight: 'bold', marginTop: 20 }}>Endereço de entrega</OrderDetailText>
+                <OrderDetailText>{item.address}</OrderDetailText>
+                <MapContainer
+                  initialRegion={{
+                    latitude: item.location.latitude,
+                    longitude: item.location.longitude,
+                    latitudeDelta: 0.0922,
+                    longitudeDelta: 0.0421,
+                  }}
+                >
+                  <Marker
+                    coordinate={{ latitude: item.location.latitude, longitude: item.location.longitude }}
+                  />
+                </MapContainer>
+
             </View>
           </OrderDetailIcon>
         </View>
