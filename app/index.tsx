@@ -80,12 +80,6 @@ export default function LoginScreen() {
           Faça seu cadastro
         </Text>
       </Text>
-      <Text style={styles.entregadorText}>
-        {' '}
-        <Text style={styles.entregadorLink} onPress={() => router.push('/loginscreen-entregador')}>
-          É entregador?
-        </Text>
-      </Text>
     </View>
   );
 }

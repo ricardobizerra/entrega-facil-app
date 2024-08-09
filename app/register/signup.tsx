@@ -2,14 +2,15 @@ import React, { useState } from 'react';
 import { View, TextInput, StyleSheet, TouchableOpacity, Text, Alert, Image } from 'react-native';
 import { addDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { database } from '@/config/firebaseConfig';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Snackbar } from 'react-native-paper';
 import { FontAwesome } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Logo from '@/assets/images/Logo.svg';
 
 export default function RegisterScreen() {
-
+  const params = useLocalSearchParams()
+  const kind = params.kind
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -18,8 +19,15 @@ export default function RegisterScreen() {
   const [error, setError] = useState('');
 
   const router = useRouter();
+  if (!kind) {
+    router.replace('register/profileSelection')
+  }
 
   async function handleRegister() {
+    if (!kind) {
+      router.replace('register/profileSelection')
+    }
+
     if (!name || !email || !password || !confirmPassword) {
       setError('Por favor, preencha todos os campos');
       return;
@@ -56,6 +64,7 @@ export default function RegisterScreen() {
         name,
         email,
         password,
+        kind
       });
 
       // Fetch the newly created user data
@@ -66,7 +75,7 @@ export default function RegisterScreen() {
       if (!newUserSnapshot.empty) {
         const newUser = newUserSnapshot.docs[0].data();
         router.push({
-          pathname: '/onBoard',
+          pathname: '/register/onBoard',
           params: newUser,
         });
       }

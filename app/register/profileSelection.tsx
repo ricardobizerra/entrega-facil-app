@@ -18,7 +18,12 @@ export default function ProfileSelection() {
       </View>
 
       <View style={styles.selectionContainer}>
-        <TouchableOpacity style={styles.selection} onPress={() => {}}>
+        <TouchableOpacity style={styles.selection} onPress={() => router.push({
+          pathname: '/register/signup',
+          params: {
+            kind: ['entregador']
+          }
+        })}>
           <Image source={require('@/assets/images/register/DeliveryPerson.png')} style={styles.selectionImage} />
           <View style={styles.selectionText}>
             <Text style={styles.selectionTitle}>
@@ -30,7 +35,12 @@ export default function ProfileSelection() {
           </View>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.selection} onPress={() => {}}>
+        <TouchableOpacity style={styles.selection} onPress={() => router.push({
+          pathname: '/register/signup',
+          params: {
+            kind: ['armazenador']
+          }
+        })}>
           <Image source={require('@/assets/images/register/HolderPerson.png')} style={styles.selectionImage} />
           <View style={styles.selectionText}>
             <Text style={styles.selectionTitle}>
@@ -42,7 +52,12 @@ export default function ProfileSelection() {
           </View>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.selection} onPress={() => {}}>
+        <TouchableOpacity style={styles.selection} onPress={() => router.push({
+          pathname: '/register/signup',
+          params: {
+            kind: ['entregador','armazenador']
+          }
+        })}>
           <Image source={require('@/assets/images/register/DeliveryHolderPerson.png')} style={styles.selectionImage} />
           <View style={styles.selectionText}>
             <Text style={styles.selectionTitle}>
