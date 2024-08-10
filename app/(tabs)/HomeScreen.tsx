@@ -1,20 +1,19 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, Text, TouchableOpacity, Button, ScrollView, Dimensions, Image } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import { Link } from "expo-router"; 
+import { View, Text, TextInput, Image, Modal } from 'react-native';
 import * as Location from 'expo-location';
-import { collection, doc, getDocs, query, updateDoc, where } from 'firebase/firestore';
+import { LocationObject } from 'expo-location';
+import Wave from '@/assets/images/wave.svg';
+import styled from 'styled-components/native';
 import { database } from '@/config/firebaseConfig';
-import OpenLocationCode from 'open-location-code-typescript';
-import { Snackbar } from 'react-native-paper';
-import LaUrsaSvg from '@/assets/images/la-ursa-home.svg';
-import ScooterSvg from '@/assets/images/scooter-home.svg';
-import styled from 'styled-components';
-import { LinearGradient } from 'expo-linear-gradient';
+import How_use from '@/assets/images/instructions.svg';
+import Actions from '@/assets/images/feedback_e_dicas_2.svg';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import { TouchableOpacity, Dimensions } from 'react-native';
+import MapView, { Marker } from 'react-native-maps';
+import { collection, getDocs, query, where, Timestamp, doc, updateDoc } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { PackageHistoryItem, getStatusColor } from './history';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import Illustration from '@/assets/images/notification_illustration.svg';
+import Exit from '@/assets/images/x.svg';
 
 interface User {
   id?: string;
@@ -24,55 +23,74 @@ interface User {
   location?: string;
 }
 
+const CenteredModalContainer = styled(View)`
+  flex: 1;
+  justify-content: center;
+  align-items: center;
+`;
+
+const NotificationContainer = styled(View)`
+  background-color: #ffffff;
+  padding: 25px;
+  margin-bottom: 20px;
+  border-radius: 20px;
+  justify-content: center;
+  align-items: center;
+`;
+
+const ConfirmButton = styled(TouchableOpacity)`
+  background-color: #DB3319;
+  padding: 20px;
+  border-radius: 50px;
+  margin-top: 30px;
+  width: 70%;
+`;
+
+const ConfirmButtonText = styled(Text)`
+  color: #ffffff;
+  font-size: 24px;
+  font-weight: 700;
+  text-align: center;
+`;
+
+const MapContainer = styled(MapView)`
+  width: 100%;
+  height: 300px;
+  margin-top: 20px;
+  border-radius: 25px;
+  overflow: hidden;
+`;
+
+export interface PackageHistoryItem {
+  id: string;
+  status: string;
+  client_id: string;
+  creation_date: Timestamp;
+  arrival_date: Timestamp;
+  delivery_actions: { [key: string]: { action: string; timestamp: Timestamp; notification_action?: string; } };
+  accepted?: boolean;
+  code: string;
+  icon: string;
+  address: string;
+  client_name: string;
+  sensitive: boolean;
+  weight: 'light' | 'medium';
+  order_name: string;
+  storage_code: string;
+}
+
 export default function HomeScreen() {
   const router = useRouter();
-
-  const { email, name, phone } = useLocalSearchParams();
-
-  const [user, setUser] = useState<User | undefined>({
-    email: email as string,
-    name: name as string,
-    phone: phone as string,
-  });
-  const [visible, setVisible] = useState(false);
+  const [location, setLocation] = useState<LocationObject | null>(null);
   const [clientId, setClientId] = useState<string | null>(null);
+  const { name } = useLocalSearchParams();
   const [packageHistory, setPackageHistory] = useState<PackageHistoryItem[]>([]);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [notificationSeen, setNotificationSeen] = useState(false);
 
-  function handleLogout() {
-    // Lógica para logout (pode incluir Firebase Auth signOut se necessário)
-    router.push('/loginscreen'); // Redirecionar para a tela de login após logout
-  }
-
-  async function getLocation() {
-    if (!user || !user?.id) return;
-
-    let { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== 'granted') {
-      console.log('Permissão de localização negada');
-      return;
-    }
-
-    let location = await Location.getCurrentPositionAsync({});
-
-    // update the current user docs with the location
-    const usersRef = collection(database, 'users');
-
-    // convert the location to OpenLocationCode
-    const olc = OpenLocationCode.encode(location.coords.latitude, location.coords.longitude, 10);
-
-    if (!olc) return;
-
-    // update the user doc with the location
-    try {
-      await updateDoc(doc(usersRef, user.id), {
-        location: olc,
-      });
-      setUser((user) => ({ ...user, location: olc }));
-      setVisible(true);
-    } catch (error) {
-      console.error('Error updating document: ', error);
-    }
-  }
+  const [user] = useState<User | undefined>({
+    name: name as string,
+  });
 
   const fetchHistoryFromFirebase = async (clientId: string) => {
     try {
@@ -83,6 +101,11 @@ export default function HomeScreen() {
         ...doc.data(),
         delivery_actions: doc.data().delivery_actions || {},
       })) as PackageHistoryItem[];
+
+      // Check if there are any unaccepted packages
+      const hasUnacceptedPackages = newEntries.some(item => item.accepted === false);
+      setIsModalVisible(hasUnacceptedPackages); // Set modal visibility based on condition
+
       setPackageHistory(newEntries);
     } catch (error) {
       console.error('Error fetching data: ', error);
@@ -104,343 +127,196 @@ export default function HomeScreen() {
   };
 
   useEffect(() => {
-    async function fetchData() {
-      const usersRef = collection(database, 'users');
-      const q = query(usersRef, where('email', '==', email));
-      const querySnapshot = await getDocs(q);
-      
-      setUser({ ...querySnapshot.docs[0].data(), id: querySnapshot.docs[0].id } as User);
-    }
-    fetchData();
+    (async () => {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        console.log('Permissão de localização negada');
+        return;
+      }
+      let location = await Location.getCurrentPositionAsync({});
+      setLocation(location);
+    })();
+  }, []);
+
+  useEffect(() => {
     getClientId();
   }, []);
 
-  const partners: { name: string; key: string }[] = [
-    {
-      name: 'Netshoes',
-      key: 'netshoes',
-    },
-    {
-      name: 'Magalu',
-      key: 'magalu',
-    },
-  ];
+  type NewThingsModalProps = {
+    isVisible: boolean;
+  };
+  
 
-  return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={{
-        paddingBottom: Dimensions.get('screen').height / 10
-      }}
-    >
-      {/* <Text style={styles.welcomeText}>Bem-vindo à Home!</Text>
-      <Text style={styles.userInfo}>Email: {user?.email}</Text>
-      <Text style={styles.userInfo}>Nome: {user?.name}</Text>
-      <Text style={styles.userInfo}>Celular: {user?.phone}</Text>
-      {user?.location && <Text style={[styles.userInfo, styles.userLocationInfo]}>Localização salva! Ela será utilizada para que os pedidos cheguem até você.</Text>}
-      {user && !user.location && (
-        <TouchableOpacity style={styles.locationButton} onPress={getLocation}>
-          <Text style={styles.buttonText}>Adicionar localização</Text>
+  const NewThingsModal: React.FC<NewThingsModalProps> = ({ isVisible }) => (
+    <Modal visible={isVisible} animationType="slide" transparent={true}>
+      <CenteredModalContainer>
+        <NotificationContainer style={{width: Dimensions.get('window').width * 0.8, height: Dimensions.get('window').height * 0.7}}>
+        <TouchableOpacity 
+          style={{ position: 'absolute', top: 60, right: 70 }} 
+          onPress={() => setNotificationSeen(true)}
+        >
+          <Exit />
         </TouchableOpacity>
-      )}
-      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-        <Text style={styles.buttonText}>Logout</Text>
-      </TouchableOpacity>
-
-      <Snackbar
-        visible={visible}
-        onDismiss={() => setVisible(false)}
-        duration={2000}
-        style={{ backgroundColor: 'green' }}
-      >
-        Localização adicionada ✅
-      </Snackbar> */}
-
-      <Header>
-        <Titles>
-          <Title>Olá, {user?.name?.split(' ')[0] || ''}</Title>
-          <Description>
-            Comece a receber seus pedidos em casa
-          </Description>
-        </Titles>
-
-        <LaUrsaSvg width={55} />        
-      </Header>
-
-      <SubContainer>
-        <OnboardingButton>
-          <OnboardingGradient
-            colors={['#FFF', '#DB3319']}
-          >
-            <OnboardingTitle>Etapas para usar o Tá Entregue</OnboardingTitle>
-            <ScooterSvg width={'40%'} />
-          </OnboardingGradient>
-        </OnboardingButton>
-
-        <SectionContainer>
-          <Section>
-            <SectionTitle>Últimas atualizações</SectionTitle>
-
-            <ScrollView
-              showsVerticalScrollIndicator={false}
-              horizontal
-            >
-              {
-                packageHistory.length > 0
-                ? packageHistory
-                    .sort((a, b) => {
-                      const lastDeliveryActionA = Object.values(a.delivery_actions)[Object.values(a.delivery_actions).length - 1];
-                      const lastDeliveryActionB = Object.values(b.delivery_actions)[Object.values(b.delivery_actions).length - 1];
-
-                      if (!lastDeliveryActionA || !lastDeliveryActionB) return 0;
-
-                      if (!lastDeliveryActionA.timestamp || !lastDeliveryActionB.timestamp) return 0;
-
-                      return lastDeliveryActionA.timestamp?.toDate() < lastDeliveryActionB.timestamp?.toDate() ? 1 : -1;
-                    })
-                    .map((item, idx) => {
-                      const lastDeliveryAction = Object.values(item.delivery_actions).pop();
-
-                      if (!lastDeliveryAction) return;
-
-                      const formattedTimestamp = format(lastDeliveryAction.timestamp?.toDate(), "dd/MM/yyyy HH:mm", {
-                        locale: ptBR,
-                      })
-
-                      const lastIndex = idx === packageHistory.length - 1;
-
-                      return (
-                        <OrderStatusCard
-                          key={item.id}
-                          lastIndex={lastIndex}
-                          statusColor={getStatusColor(item.status?.toLowerCase())}
-                        >
-                          <StatusCardContainer>
-                            <StatusCardTitle>
-                              Pedido {item.id}{' '}
-                              <ActionStatus>
-                                {lastDeliveryAction.notification_action ? lastDeliveryAction.notification_action?.toLowerCase() : lastDeliveryAction.action?.toLowerCase()}
-                              </ActionStatus>
-                            </StatusCardTitle>
-
-                            <StatusCardTimestamp>
-                              {formattedTimestamp}
-                            </StatusCardTimestamp>
-                          </StatusCardContainer>
-
-                          <StatusCardColorBar statusColor={getStatusColor(item.status?.toLowerCase())} />
-                        </OrderStatusCard>
-                      );
-                    })
-                : (
-                    <Text>Nenhuma atualização encontrada</Text>
-                  )
-              }
-            </ScrollView>
-          </Section>
-
-          <Section>
-            <SectionTitle>
-              Nossos parceiros
-            </SectionTitle>
-
-            <ScrollView
-              showsHorizontalScrollIndicator={false}
-              horizontal
-            >
-              <PartnerCard key='netshoes'>
-                <PartnerImage
-                  source={require(`@/assets/images/partner-netshoes.png`)}
-                />
-              </PartnerCard>
-
-              <PartnerCard key='magalu'>
-                <PartnerImage
-                  source={require(`@/assets/images/partner-magalu.png`)}
-                />
-              </PartnerCard>
-            </ScrollView>
-          </Section>
-        </SectionContainer>
-      </SubContainer>
-    </ScrollView>
+          <Illustration />
+          <Text style={{ fontSize: 40, marginTop: 20, fontWeight: 900, textAlign: 'center' }}>Você tem novas{'\n'}solicitações de entrega</Text>
+          <ConfirmButton onPress={() => router.push('/history')}>
+            <ConfirmButtonText>Acessar pedidos</ConfirmButtonText>
+          </ConfirmButton>
+        </NotificationContainer>
+      </CenteredModalContainer>
+    </Modal>
   );
 
+  return (
+    <HomeScreenContainer>
+      {/* Cabeçalho */}
+      <HeaderContainer>
+        <Alltext>
+          <HeaderText>
+            Olá, <UserName>{user?.name?.split(' ')[0] || ''}</UserName>
+          </HeaderText>
+          <SubtitleText>Essa é sua homepage de entregador.</SubtitleText>
+        </Alltext>
+        <WaveContainer>
+          <Wave />
+        </WaveContainer>
+      </HeaderContainer>
+
+      <Container>
+        {/* Seção de Localização */}
+        <LocationSection>
+          <LocationText>Você está aqui</LocationText>
+          <LocationAddress>Parque Treze de Maio, Boa Vista, Recife</LocationAddress>
+          <StyledTextInput placeholder="Buscar localidade" />
+          <MapContainer
+                  initialRegion={{
+                    latitude: -8,
+                    longitude: -30,
+                    latitudeDelta: 0.0922,
+                    longitudeDelta: 0.0421,
+                  }}
+                >
+                  <Marker
+                    coordinate={{ latitude: -8, longitude: -30 }}
+                  />
+                </MapContainer>
+        </LocationSection>
+
+        {/* Seção de Ação */}
+        <TouchableOpacity onPress={() => router.push('/how_use.tsx')}>
+          <HowUseContainer>
+            <How_use />
+          </HowUseContainer>
+        </TouchableOpacity>
+
+        {/* Ações */}
+        <ActionsSection>
+          <ActionsText>Ações</ActionsText>
+        </ActionsSection>
+
+        <NewThingsModal isVisible={isModalVisible && !notificationSeen} />
+      </Container>
+    </HomeScreenContainer>
+  );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f2af2c',
-    paddingTop: 32,
-    paddingBottom: 32,
-  },
-  welcomeText: {
-    fontSize: 24,
-    marginBottom: 20,
-  },
-  userInfo: {
-    fontSize: 18,
-    marginBottom: 10,
-    textAlign: 'center',
-  },
-  userLocationInfo: { 
-    fontSize: 16,
-    marginTop: 8,
-    color: '#fff',
-    backgroundColor: 'green',
-    paddingHorizontal: 16,
-    paddingVertical: 4,
-    borderRadius: 16
-  },
-  locationButton: {
-    backgroundColor: '#1e90ff',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 5,
-    marginTop: 20,
-  },
-  logoutButton: {
-    backgroundColor: '#ff6347',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 5,
-    marginTop: 20,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 18,
-  },
-});
+// Styled-components para estilização
+const HomeScreenContainer = styled(View)`
+  flex: 1;
+  background-color: #3a3a3a;
+`;
 
-const Header = styled(View)`
-  padding: 32px;
-  display: flex;
+const HeaderContainer = styled(View)`
+  width: 100%;
   flex-direction: row;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  width: 100%;
+  box-sizing: border-box;
 `;
 
-const Titles = styled(View)`
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+const HeaderText = styled(Text)`
+  color: #f2f2f2;
+  font-size: 36px;
+  font-weight: 700;
 `;
 
-const Title = styled(Text)`
-  font-size: 24px;
+const SubtitleText = styled(Text)`
+  font-size: 14px;
+  color: #ccc;
+  margin-bottom: 10px;
+`;
+
+const UserName = styled(Text)`
+  color: #DB3319;
+`;
+
+const WaveContainer = styled(View)`
+  align-items: flex-end;
+  margin-top: 12;
+`;
+
+const Container = styled(View)`
+  flex: 1;
+  padding: 30px;
+  background-color: #f5f5f5;
+  border-top-left-radius: 30px;
+  border-top-right-radius: 30px;
+  margin-top: -7px;
+`;
+
+const LocationSection = styled(View)`
+  margin-top: 10px;
+`;
+
+const LocationText = styled(Text)`
+  font-size: 18px;
+  font-weight: bold;
   color: #000;
+`;
+
+const LocationAddress = styled(Text)`
+  font-size: 14px;
+  color: #333;
+  margin-bottom: 15px;
+`;
+
+const StyledImage = styled(Image)`
+  width: 100%;
+  height: 200px;
+  border-radius: 10px;
+  margin-bottom: 10px;
+`;
+
+const StyledTextInput = styled(TextInput)`
+  height: 40px;
+  border-radius: 20px;
+  padding-left: 15px;
+  margin-bottom: 15px;
+  background-color: #f0f0f0;
+`;
+
+const ActionsText = styled(Text)`
+  font-size: 20px;
+  color: black;
+  margin-bottom: 20px;
   font-weight: bold;
 `;
 
-const Description = styled(Text)`
-  font-size: 12px;
-  color: #000;
+const ActionsSection = styled(View)`
+  margin-top: 30px;
 `;
 
-const SubContainer = styled(View)`
-  width: 100%;
-  height: 100%;
-  background-color: #fff;
-  border-top-left-radius: 32px;
-  border-top-right-radius: 32px;
-  padding: 32px;
-  margin-top: 32px;
+const Alltext = styled(View)`
+  margin: 17px;
+  text-align: left;
+  margin-left: 40;
+  flex: 1;
 `;
 
-const OnboardingGradient = styled(LinearGradient)`
-  width: 100%;
-  height: 100%;
-  border-radius: 16px;
-  display: flex;
-  justify-content: center;
+const HowUseContainer = styled(View)`
+  width: 329px;
+  height: 127px;
+  border-radius: 20px;
+  overflow: hidden; 
   align-items: center;
-  flex-direction: row;
-  padding: 16px;
-`;
-
-const OnboardingButton = styled(TouchableOpacity)`
-position: absolute;
-  top: -32px;
-  margin: 0 32px;
-  width: 100%;
-  height: 160px;
-`;
-
-const OnboardingTitle = styled(Text)`
-  font-size: 18px;
-  font-weight: 700;
-  color: #000;
-  width: 60%;
-`;
-
-const SectionContainer = styled(View)`
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-  margin-top: 128px; 
-`;
-
-const Section = styled(View)`
-  display: flex;
-  gap: 16px;
-`;
-
-const SectionTitle = styled(Text)`
-  font-size: 18px;
-  font-weight: 700;
-  color: #000;
-`;
-
-const OrderStatusCard = styled(View)<{ lastIndex?: boolean; statusColor?: string }>`
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  border-radius: 8px;
-  border-width: 1px;
-  border-color: ${(props) => props.statusColor || '#000'};
-  width: 200px;
-  margin-right: ${(props) => (props.lastIndex ? '0' : '16px')};
-`;
-
-const StatusCardContainer = styled(View)`
-  display: flex;
-  gap: 4px;
-  padding: 16px 16px 8px;
-  margin: auto 0;
-`;
-
-const StatusCardTitle = styled(Text)`
-  font-size: 14px;
-  font-weight: 400;
-  color: #000;
-`;
-
-const ActionStatus = styled(Text)`
-  font-weight: 600;
-`;
-
-const StatusCardTimestamp = styled(Text)`
-  font-size: 12px;
-  color: #000;
-`;
-
-const StatusCardColorBar = styled(View)<{ statusColor?: string }>`
-  width: 100%;
-  height: 16px;
-  background-color: ${(props) => props.statusColor || '#000'};
-`;
-
-const PartnerCard = styled(View)`
-  display: flex;
-  border-radius: 16px;
-  margin-right: 16px;
-  overflow: hidden;
-`;
-
-const PartnerImage = styled(Image)`
-  aspect-ratio: 1;
-  height: 120px;
+  justify-content: center;
 `;
