@@ -7,6 +7,8 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { updateDoc, collection, query, where, getDocs, doc } from 'firebase/firestore';
 import { database } from '@/config/firebaseConfig';
 
+type ProfileEnum = 'entregador' | 'armazenador' | 'entregador,armazenador';
+
 export default function ProfileSelection() {
   const router = useRouter();
   const [route, setRoute_] = useState('/register/signup');
@@ -18,6 +20,12 @@ export default function ProfileSelection() {
     setSetRoute(true)
   }
   
+  const [selection, setSelection] = useState<ProfileEnum | undefined>(undefined);
+
+  const handleSelection = (selection: ProfileEnum) => {
+    setSelection(selection);
+  }
+
   return (
     <>
     <View style={styles.container}>
@@ -31,22 +39,17 @@ export default function ProfileSelection() {
       </View>
 
       <View style={styles.selectionContainer}>
-        <TouchableOpacity style={styles.selection} onPress={() => {
-          if (params.cadastrado) {
-            // update user
-            updateDoc(doc(database, "users", String(params?.id)), { kind: "entregador" })
-          }
-          params.kind = "entregador"
-
-          router.push({
-            pathname: route,
-            params: params
-          });
-        }}>
+        <TouchableOpacity
+          style={[styles.selection, selection === 'entregador' && styles.selectionActive]}
+          onPress={() => handleSelection('entregador')}
+        >
           <Image source={require('@/assets/images/register/DeliveryPerson.png')} style={styles.selectionImage} />
           <View style={styles.selectionText}>
             <Text style={styles.selectionTitle}>
-              Quero ser entregador
+              Quero ser{" "}
+              <Text style={styles.selectionTitleBold}>
+                entregador
+              </Text>
             </Text>
             <Text style={styles.selectionDescription}>
               Entregue encomendas para sua comunidade
@@ -54,22 +57,17 @@ export default function ProfileSelection() {
           </View>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.selection} onPress={() => {
-          if (params.cadastrado) {
-            // update user
-            updateDoc(doc(database, "users", String(params?.id)), { kind: "armazenador" })
-          }
-          params.kind = "armazenador"
-          
-          router.push({
-            pathname: route,
-            params: params
-          });
-        }}>
+        <TouchableOpacity
+          style={[styles.selection, selection === 'armazenador' && styles.selectionActive]}
+          onPress={() => handleSelection('armazenador')}
+        >
           <Image source={require('@/assets/images/register/HolderPerson.png')} style={styles.selectionImage} />
           <View style={styles.selectionText}>
             <Text style={styles.selectionTitle}>
-              Quero ser armazenador
+              Quero ser{" "}
+              <Text style={styles.selectionTitleBold}>
+                armazenador
+              </Text>
             </Text>
             <Text style={styles.selectionDescription}>
               Armazene encomendas de sua comunidade em um espaço de sua residência
@@ -77,27 +75,49 @@ export default function ProfileSelection() {
           </View>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.selection} onPress={() => {
-          if (params.cadastrado) {
-            // update user
-            updateDoc(doc(database, "users", String(params?.id)), { kind: "entregador,armazenador" })
-          }
-          params.kind = "entregador,armazenador"
-
-          router.push({
-            pathname: route,
-            params: params
-          });
-        }}>
+        <TouchableOpacity
+          style={[styles.selection, selection === 'entregador,armazenador' && styles.selectionActive]}
+          onPress={() => handleSelection('entregador,armazenador')}
+        >
           <Image source={require('@/assets/images/register/DeliveryHolderPerson.png')} style={styles.selectionImage} />
           <View style={styles.selectionText}>
             <Text style={styles.selectionTitle}>
-              Quero ser entregador e armazenador
+              Quero ser{" "}
+              <Text style={styles.selectionTitleBold}>
+                entregador
+              </Text>
+              {" e "}
+              <Text style={styles.selectionTitleBold}>
+                armazenador
+              </Text>
             </Text>
             <Text style={styles.selectionDescription}>
               Atue nas duas modalidades do Tá Entregue
             </Text>
           </View>
+        </TouchableOpacity>
+      </View>
+
+      <View>
+        <TouchableOpacity
+          onPress={() => {
+            if (!selection) return;
+            if (params.cadastrado) {
+              // update user
+              updateDoc(doc(database, "users", String(params?.id)), { kind: selection })
+            }
+            params.kind = selection
+              router.push({
+                pathname: route,
+                params: params
+              });
+            }}
+          style={[styles.nextButton, !selection && styles.nextButtonDisabled]}
+          disabled={!selection}
+        >
+          <Text style={styles.nextButtonText}>
+            {!selection ? 'Selecione um perfil' : 'Próximo'}
+          </Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -136,29 +156,59 @@ const styles = StyleSheet.create({
   selection: {
     width: '100%',
     borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#ccc',
+    borderWidth: 2,
+    borderColor: '#f2f2f2',
     height: 120,
     overflow: 'hidden',
     backgroundColor: '#f2f2f2',
     flexDirection: 'row',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  selectionActive: {
+    borderColor: '#ffa500',
   },
   selectionImage: {
-    width: '50%',
+    width: '40%',
     height: '100%',
   },
   selectionText: {
-    width: '50%',
+    width: '56%',
     justifyContent: 'center',
-    marginLeft: 8,
+    marginVertical: '2%',
   },
   selectionTitle: {
     fontSize: 16,
-    fontWeight: '700',
     color: '#000',
+  },
+  selectionTitleBold: {
+    fontWeight: 'bold',
   },
   selectionDescription: {
     fontSize: 12,
     color: '#000',
+  },
+  nextButton: {
+    backgroundColor: '#ffa500',
+    padding: 16,
+    borderRadius: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 16,
+    width: 'auto',
+  },
+  nextButtonDisabled: {
+    backgroundColor: '#ccc',
+  },
+  nextButtonText: {
+    color: '#000',
+    fontSize: 16,
+    fontWeight: '700',
   },
 });

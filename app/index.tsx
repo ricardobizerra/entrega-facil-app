@@ -152,16 +152,17 @@ const styles = StyleSheet.create({
   },
   button: {
     backgroundColor: '#FFA500',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 5,
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    borderRadius: 999,
     marginVertical: 10,
     width: '80%',
     alignItems: 'center',
   },
   buttonText: {
-    color: '#fff',
-    fontSize: 18,
+    color: '#000',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
   registerText: {
     color: '#000',
