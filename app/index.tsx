@@ -31,8 +31,16 @@ export default function LoginScreen() {
           });
           return
         }
-        // TODO: mais formas de retomar o cadastro no meio
-        // considerando o kind e o que já foi preenchido
+        // TODO: substituir aqui por um campo de confirmed
+        else if (!userData.endereço && !userData.endereço_armazem) {
+          // Save the user email to AsyncStorage
+          await AsyncStorage.setItem('userEmail', userData.email);
+          router.push({
+            pathname: '/register/onBoard',
+            params: userData,
+          });
+          return
+        }
 
         // Save the user email to AsyncStorage
         await AsyncStorage.setItem('userEmail', userData.email);
