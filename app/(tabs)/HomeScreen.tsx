@@ -1,17 +1,19 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, Image } from 'react-native';
+import { View, Text, TextInput, Image, Modal } from 'react-native';
 import * as Location from 'expo-location';
-import { LocationObject } from 'expo-location'; // Importando o tipo LocationObject
+import { LocationObject } from 'expo-location';
 import Wave from '@/assets/images/wave.svg';
 import styled from 'styled-components/native';
 import { database } from '@/config/firebaseConfig';
 import How_use from '@/assets/images/instructions.svg';
 import Actions from '@/assets/images/feedback_e_dicas_2.svg';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { TouchableOpacity } from 'react-native'; // Importe TouchableOpacity
+import { TouchableOpacity, Dimensions } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import { collection, getDocs, query, where, Timestamp, doc, updateDoc } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Illustration from '@/assets/images/notification_illustration.svg';
+import Exit from '@/assets/images/x.svg';
 
 interface User {
   id?: string;
@@ -20,6 +22,36 @@ interface User {
   phone?: string;
   location?: string;
 }
+
+const CenteredModalContainer = styled(View)`
+  flex: 1;
+  justify-content: center;
+  align-items: center;
+`;
+
+const NotificationContainer = styled(View)`
+  background-color: #ffffff;
+  padding: 25px;
+  margin-bottom: 20px;
+  border-radius: 20px;
+  justify-content: center;
+  align-items: center;
+`;
+
+const ConfirmButton = styled(TouchableOpacity)`
+  background-color: #DB3319;
+  padding: 20px;
+  border-radius: 50px;
+  margin-top: 30px;
+  width: 70%;
+`;
+
+const ConfirmButtonText = styled(Text)`
+  color: #ffffff;
+  font-size: 24px;
+  font-weight: 700;
+  text-align: center;
+`;
 
 const MapContainer = styled(MapView)`
   width: 100%;
@@ -49,10 +81,12 @@ export interface PackageHistoryItem {
 
 export default function HomeScreen() {
   const router = useRouter();
-  const [location, setLocation] = useState<LocationObject | null>(null); // Tipagem ajustada
+  const [location, setLocation] = useState<LocationObject | null>(null);
   const [clientId, setClientId] = useState<string | null>(null);
   const { name } = useLocalSearchParams();
   const [packageHistory, setPackageHistory] = useState<PackageHistoryItem[]>([]);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [notificationSeen, setNotificationSeen] = useState(false);
 
   const [user] = useState<User | undefined>({
     name: name as string,
@@ -67,12 +101,16 @@ export default function HomeScreen() {
         ...doc.data(),
         delivery_actions: doc.data().delivery_actions || {},
       })) as PackageHistoryItem[];
+
+      // Check if there are any unaccepted packages
+      const hasUnacceptedPackages = newEntries.some(item => item.accepted === false);
+      setIsModalVisible(hasUnacceptedPackages); // Set modal visibility based on condition
+
       setPackageHistory(newEntries);
     } catch (error) {
       console.error('Error fetching data: ', error);
     }
   };
-
 
   const getClientId = async () => {
     try {
@@ -96,9 +134,38 @@ export default function HomeScreen() {
         return;
       }
       let location = await Location.getCurrentPositionAsync({});
-      setLocation(location); // Agora aceita o tipo LocationObject
+      setLocation(location);
     })();
   }, []);
+
+  useEffect(() => {
+    getClientId();
+  }, []);
+
+  type NewThingsModalProps = {
+    isVisible: boolean;
+  };
+  
+
+  const NewThingsModal: React.FC<NewThingsModalProps> = ({ isVisible }) => (
+    <Modal visible={isVisible} animationType="slide" transparent={true}>
+      <CenteredModalContainer>
+        <NotificationContainer style={{width: Dimensions.get('window').width * 0.8, height: Dimensions.get('window').height * 0.7}}>
+        <TouchableOpacity 
+          style={{ position: 'absolute', top: 60, right: 70 }} 
+          onPress={() => setNotificationSeen(true)}
+        >
+          <Exit />
+        </TouchableOpacity>
+          <Illustration />
+          <Text style={{ fontSize: 40, marginTop: 20, fontWeight: 900, textAlign: 'center' }}>Você tem novas{'\n'}solicitações de entrega</Text>
+          <ConfirmButton onPress={() => router.push('/history')}>
+            <ConfirmButtonText>Acessar pedidos</ConfirmButtonText>
+          </ConfirmButton>
+        </NotificationContainer>
+      </CenteredModalContainer>
+    </Modal>
+  );
 
   return (
     <HomeScreenContainer>
@@ -146,6 +213,8 @@ export default function HomeScreen() {
         <ActionsSection>
           <ActionsText>Ações</ActionsText>
         </ActionsSection>
+
+        <NewThingsModal isVisible={isModalVisible && !notificationSeen} />
       </Container>
     </HomeScreenContainer>
   );
