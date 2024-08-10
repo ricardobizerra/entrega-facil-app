@@ -1,12 +1,25 @@
+import React, { useState } from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import ArrowLeft from '@/assets/images/ArrowLeft.svg';
 import DeliveryProfile from '@/assets/images/register/DeliveryProfile.svg';
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
+
+import { updateDoc, collection, query, where, getDocs, doc } from 'firebase/firestore';
+import { database } from '@/config/firebaseConfig';
 
 export default function ProfileSelection() {
   const router = useRouter();
+  const [route, setRoute_] = useState('/register/signup');
+  const [setted_route, setSetRoute] = useState(false)
+  const params = useLocalSearchParams()
 
+  if (params.cadastrado && !setted_route) {
+    setRoute_('/register/onBoard')
+    setSetRoute(true)
+  }
+  
   return (
+    <>
     <View style={styles.container}>
       <View style={styles.titleContainer}>
         <TouchableOpacity onPress={() => router.back()}>
@@ -18,12 +31,18 @@ export default function ProfileSelection() {
       </View>
 
       <View style={styles.selectionContainer}>
-        <TouchableOpacity style={styles.selection} onPress={() => router.push({
-          pathname: '/register/signup',
-          params: {
-            kind: ['entregador']
+        <TouchableOpacity style={styles.selection} onPress={() => {
+          if (params.cadastrado) {
+            // update user
+            updateDoc(doc(database, "users", String(params?.id)), { kind: "entregador" })
           }
-        })}>
+          params.kind = "entregador"
+
+          router.push({
+            pathname: route,
+            params: params
+          });
+        }}>
           <Image source={require('@/assets/images/register/DeliveryPerson.png')} style={styles.selectionImage} />
           <View style={styles.selectionText}>
             <Text style={styles.selectionTitle}>
@@ -35,12 +54,18 @@ export default function ProfileSelection() {
           </View>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.selection} onPress={() => router.push({
-          pathname: '/register/signup',
-          params: {
-            kind: ['armazenador']
+        <TouchableOpacity style={styles.selection} onPress={() => {
+          if (params.cadastrado) {
+            // update user
+            updateDoc(doc(database, "users", String(params?.id)), { kind: "armazenador" })
           }
-        })}>
+          params.kind = "armazenador"
+          
+          router.push({
+            pathname: route,
+            params: params
+          });
+        }}>
           <Image source={require('@/assets/images/register/HolderPerson.png')} style={styles.selectionImage} />
           <View style={styles.selectionText}>
             <Text style={styles.selectionTitle}>
@@ -52,12 +77,18 @@ export default function ProfileSelection() {
           </View>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.selection} onPress={() => router.push({
-          pathname: '/register/signup',
-          params: {
-            kind: ['entregador','armazenador']
+        <TouchableOpacity style={styles.selection} onPress={() => {
+          if (params.cadastrado) {
+            // update user
+            updateDoc(doc(database, "users", String(params?.id)), { kind: "entregador,armazenador" })
           }
-        })}>
+          params.kind = "entregador,armazenador"
+
+          router.push({
+            pathname: route,
+            params: params
+          });
+        }}>
           <Image source={require('@/assets/images/register/DeliveryHolderPerson.png')} style={styles.selectionImage} />
           <View style={styles.selectionText}>
             <Text style={styles.selectionTitle}>
@@ -70,6 +101,7 @@ export default function ProfileSelection() {
         </TouchableOpacity>
       </View>
     </View>
+    </>
   )
 }
 

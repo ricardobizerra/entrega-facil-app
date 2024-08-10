@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import * as Location from 'expo-location';
 import { collection, doc, getDocs, query, updateDoc, where } from 'firebase/firestore';
 import { database } from '@/config/firebaseConfig';
-import OpenLocationCode from 'open-location-code-typescript';
 import { Snackbar } from 'react-native-paper';
 
 interface User {
@@ -12,16 +10,20 @@ interface User {
   email?: string;
   name?: string;
   phone?: string;
+  kind?: string;
   location?: string;
 }
 
 export default function OnBoardScreen() {
   const router = useRouter();
-  const [user, setUser] = useState<User | undefined>();
+  const [user, setUser] = useState<User>();
   const [visible, setVisible] = useState(false);
   const [screen, setScreen] = useState(1);
 
-  const { email, name, phone } = useLocalSearchParams();
+  const { email, kind, _screen } = useLocalSearchParams();
+  if (_screen != null && Number(_screen) != screen) {
+    setScreen(Number(_screen))
+  }
 
   useEffect(() => {
     async function fetchData() {
@@ -32,62 +34,57 @@ export default function OnBoardScreen() {
     }
     fetchData();
   }, []);
+  
+  const _kind: string[] = String(kind!).split(',')!
 
-  async function getLocation() {
-    if (!user || !user?.id) return;
-
-    let { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== 'granted') {
-      console.log('Permissão de localização negada');
-      return;
-    }
-
-    let location = await Location.getCurrentPositionAsync({});
-
-    // Convert the location to OpenLocationCode
-    const olc = OpenLocationCode.encode(location.coords.latitude, location.coords.longitude, 10);
-
-    if (!olc) return;
-
-    // Update the user doc with the location
-    try {
-      await updateDoc(doc(collection(database, 'users'), user.id), {
-        location: olc,
-      });
-      setUser((user) => ({ ...user, location: olc }));
-      setVisible(true);
-
-      // Redirect to the HomeScreen with user data
-      router.push({
-        pathname: '/HomeScreen',
-        params: { email: user.email, name: user.name, phone: user.phone },
-      });
-
-    } catch (error) {
-      console.error('Error updating document: ', error);
-    }
+  if (screen === 1 && !_kind.includes('entregador')) {
+    setScreen(2)
   }
+  // TODO: mais números para representar as etapas do cadastro
+  else if (screen === 2 && !_kind.includes('armazenador') || screen === 3) {
+    router.push({
+      pathname: '/(tabs)/HomeScreen',
+      params: {
+        email: user?.email,
+        name: user?.name,
+        phone: user?.phone,
+        kind: user?.kind
+      },
+    });
+  }
+
+
 
   return (
     <View style={styles.container}>
-      {screen === 1 && (
+      {screen === 1 && _kind.includes('entregador') && (
         <>
           <Image source={require('@/assets/images/tela_cadastro.png')} style={styles.image} />
-          <Text style={styles.text}>Cadastre o seu local de entrega</Text>
+          <Text style={styles.text}>Cadastre o seu local de entrega e dados de entregador</Text>
           <Text style={styles.subtext}>Para utilizar o Tá Entregue, é preciso primeiro ter um local de entrega cadastrado</Text>
-          <TouchableOpacity style={styles.nextButton} onPress={() => setScreen(2)}>
+          <TouchableOpacity style={styles.nextButton} onPress={() => {
+            router.push({
+              pathname: '/register/setLocalEntrega',
+              params: { email: user?.email, name: user?.name, phone: user?.phone, kind: user?.kind, id: user?.id, _screen: screen },
+            });
+          }}>
             <Text style={styles.buttonText}>Avançar</Text>
           </TouchableOpacity>
         </>
       )}
-      {screen === 2 && (
+      {screen === 2 && _kind.includes('armazenador') && (
         <>
           <Image source={require('@/assets/images/tela_cadastro2.png')} style={styles.image} />
-          <Text style={styles.text}>Esteja presente no local em que você quer receber seu pedido</Text>
-          <Text style={styles.subtext}>É necessário estar presente no seu local de entrega para cadastrá-lo no Tá Entregue</Text>
+          <Text style={styles.text}>Cadastre o local do armazém e dados de armazenador</Text>
+          <Text style={styles.subtext}>Para utilizar o Tá Entregue, é preciso primeiro ter um local de armazém cadastrado</Text>
           {!user?.location && (
-            <TouchableOpacity style={styles.locationButton} onPress={getLocation}>
-              <Text style={styles.buttonText}>Estou no local</Text>
+            <TouchableOpacity style={styles.locationButton} onPress={() => {
+              router.push({
+                pathname: '/register/setLocalArmazem',
+                params: { email: user?.email, name: user?.name, phone: user?.phone, kind: user?.kind, id: user?.id, _screen: screen },
+              });
+            }}>
+              <Text style={styles.buttonText}>Avançar</Text>
             </TouchableOpacity>
           )}
         </>

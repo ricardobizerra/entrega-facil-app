@@ -18,8 +18,22 @@ export default function LoginScreen() {
       const querySnapshot = await getDocs(q);
 
       if (!querySnapshot.empty) {
-        const userData = querySnapshot.docs[0].data();
-        
+        let userData = querySnapshot.docs[0].data();
+        const userId = querySnapshot.docs[0].id;
+        userData.id = userId
+        if (!userData.kind) {
+          userData.cadastrado = 'cadastrado'
+          // Save the user email to AsyncStorage
+          await AsyncStorage.setItem('userEmail', userData.email);
+          router.push({
+            pathname: '/register/profileSelection',
+            params: userData,
+          });
+          return
+        }
+        // TODO: mais formas de retomar o cadastro no meio
+        // considerando o kind e o que já foi preenchido
+
         // Save the user email to AsyncStorage
         await AsyncStorage.setItem('userEmail', userData.email);
 
@@ -29,6 +43,7 @@ export default function LoginScreen() {
             email: userData.email,
             name: userData.name,
             phone: userData.phone,
+            kind: userData.kind
           },
         });
       } else {

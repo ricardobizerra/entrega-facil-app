@@ -13,7 +13,10 @@ export default function RegisterStart() {
         <Text style={styles.h2}>Trabalhe no Tá Entregue e gere uma renda extra colaborando com as comunidades do Recife</Text>
       </View>
 
-      <TouchableOpacity style={styles.button} onPress={() => router.push('/register/profileSelection')}>
+      <TouchableOpacity style={styles.button} onPress={() => router.push({
+        pathname: '/register/profileSelection',
+        params: {nao_cadastrado: 'nao_cadastrado'}
+      })}>
         <Text style={styles.buttonText}>Vamos lá!</Text>
       </TouchableOpacity>
 
