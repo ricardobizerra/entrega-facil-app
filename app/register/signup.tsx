@@ -12,11 +12,38 @@ export default function RegisterScreen() {
   const params = useLocalSearchParams()
   const kind = params.kind
   const [name, setName] = useState('');
+  const cpf_default = '000.000.000-00'
+  const [cpf, setCpf] = useState(cpf_default);
+  const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [visible, setVisible] = useState(false);
   const [error, setError] = useState('');
+  const numerical = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0']
+
+  async function setCpf2(cpf: string) {
+    const last = cpf[cpf.length - 1]
+    if (!numerical.includes(last) || cpf.length > 14) {
+      cpf = cpf.substring(0, cpf.length-1)
+    }
+    if (cpf.length === 4 || cpf.length === 8 || cpf.length === 12) {
+      var diff = ['.']
+      if (cpf.length === 12) {
+        diff = ['-']
+      }
+      cpf = cpf.substring(0, cpf.length-1) + diff + [last]
+    }
+    setCpf(cpf)
+  }
+
+  async function setPhone2(phone: string) {
+    const last = phone[phone.length - 1]
+    if (!numerical.includes(last) || phone.length > 17) {
+      phone = phone.substring(0, phone.length-1)
+    }
+    setPhone(phone)
+  }
 
   const router = useRouter();
   if (!kind) {
@@ -28,7 +55,7 @@ export default function RegisterScreen() {
       router.replace('register/profileSelection')
     }
 
-    if (!name || !email || !password || !confirmPassword) {
+    if (!name || !email || !password || !confirmPassword || !phone || !cpf || cpf===cpf_default || cpf.length < 14) {
       setError('Por favor, preencha todos os campos');
       return;
     }
@@ -62,6 +89,8 @@ export default function RegisterScreen() {
     try {
       await addDoc(usersRef, {
         name,
+        cpf,
+        phone,
         email,
         password,
         kind
@@ -102,6 +131,30 @@ export default function RegisterScreen() {
           placeholderTextColor="#aaa"
           value={name}
           onChangeText={setName}
+        />
+      </View>
+      <View style={styles.inputContainer} onTouchStart={() => {
+        if (cpf === '000.000.000-00') {
+          setCpf('')
+        }
+      }}>
+        <FontAwesome name="info" size={14} color="black" />
+        <TextInput
+          style={styles.input}
+          placeholder="Cpf"
+          placeholderTextColor="#aaa"
+          value={cpf}
+          onChangeText={setCpf2}
+        />
+      </View>
+      <View style={styles.inputContainer}>
+        <FontAwesome name="phone" size={13} color="black" />
+        <TextInput
+          style={styles.input}
+          placeholder="Telefone"
+          placeholderTextColor="#aaa"
+          value={phone}
+          onChangeText={setPhone2}
         />
       </View>
       <View style={styles.inputContainer}>
