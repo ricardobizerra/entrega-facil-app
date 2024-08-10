@@ -7,6 +7,7 @@ import { Snackbar } from 'react-native-paper';
 import { FontAwesome } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Logo from '@/assets/images/Logo.svg';
+import setCpf2 from './set_cpf'
 
 export default function RegisterScreen() {
   const params = useLocalSearchParams()
@@ -21,21 +22,6 @@ export default function RegisterScreen() {
   const [visible, setVisible] = useState(false);
   const [error, setError] = useState('');
   const numerical = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0']
-
-  async function setCpf2(cpf: string) {
-    const last = cpf[cpf.length - 1]
-    if (!numerical.includes(last) || cpf.length > 14) {
-      cpf = cpf.substring(0, cpf.length-1)
-    }
-    if (cpf.length === 4 || cpf.length === 8 || cpf.length === 12) {
-      var diff = ['.']
-      if (cpf.length === 12) {
-        diff = ['-']
-      }
-      cpf = cpf.substring(0, cpf.length-1) + diff + [last]
-    }
-    setCpf(cpf)
-  }
 
   async function setPhone2(phone: string) {
     const last = phone[phone.length - 1]
@@ -144,7 +130,7 @@ export default function RegisterScreen() {
           placeholder="Cpf"
           placeholderTextColor="#aaa"
           value={cpf}
-          onChangeText={setCpf2}
+          onChangeText={(s) => setCpf2(s, setCpf)}
         />
       </View>
       <View style={styles.inputContainer}>

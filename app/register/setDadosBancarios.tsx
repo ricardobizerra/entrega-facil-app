@@ -7,34 +7,37 @@ import { Snackbar } from 'react-native-paper';
 import { FontAwesome } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Logo from '@/assets/images/Logo.svg';
+import setCpf2 from './set_cpf'
 
 export default function RegisterScreen() {
   const params = useLocalSearchParams()
   const email: string = String(params.email)
-  const [veiculo, setVeiculo] = useState('');
-  const [modelo, setModelo] = useState('');
-  const [placa, setPlaca] = useState('');
-  const [fotoCnh, setCnh] = useState('');
+  const [banco, setBanco] = useState('');
+  const [agencia, setAgencia] = useState('');
+  const [n_conta, setNConta] = useState('');
+  const [titular_conta, setTitular] = useState('');
+  const [cpf_titular, setCpfTitular] = useState('');
   const [visible, setVisible] = useState(false);
   const [error, setError] = useState('');
 
   const router = useRouter();
 
   async function handleRegister() {
-    if (!veiculo || !modelo || (veiculo.toLowerCase() !== 'bicicleta' && !placa) || (veiculo.toLowerCase() !== 'bicicleta' && !fotoCnh)) {
+    if (!banco || !agencia || !n_conta || !titular_conta || !cpf_titular) {
       setError('Por favor, preencha todos os campos');
       return;
     }
 
     try {
       await updateDoc(doc(database, "users", String(params.id)), {
-        entregador: {
-          veiculo,
-          modelo,
-          placa
+        dados_bancarios: {
+          banco,
+          agencia,
+          n_conta,
+          titular_conta,
+          cpf_titular
         }
       });
-      // TODO: armazenar foto cnh
 
       // Fetch the newly created user data
       const usersRef = collection(database, 'users');
@@ -45,14 +48,7 @@ export default function RegisterScreen() {
       if (newUserSnapshot.empty) {
         router.back()
       }
-      
-      const newUser = newUserSnapshot.docs[0].data();
-      newUser._screen = 2
-      newUser.id = newUserSnapshot.docs[0].id
-      router.push({
-        pathname: '/register/onBoard',
-        params: newUser,
-      });
+      router.push({ pathname: '/register/analise' })
 
       setVisible(true);
     } catch (e: unknown) {
@@ -66,43 +62,57 @@ export default function RegisterScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.subtitle}>Informações de entrega</Text>
-      <Text style={styles.subsubtitle}>Informações do entregador</Text>
+      <Text style={styles.subtitle}>Dados Bancários</Text>
       <View style={styles.inputContainer}>
-        <FontAwesome name="bicycle" size={24} color="black" />
+        <FontAwesome size={24} color="black" />
         <TextInput
           style={styles.input}
-          placeholder="Tipo de veículo"
+          placeholder="Banco"
           placeholderTextColor="#aaa"
-          value={veiculo}
-          onChangeText={setVeiculo}
+          value={banco}
+          onChangeText={setBanco}
         />
       </View>
       <View style={styles.inputContainer}>
-        <FontAwesome name="modx" size={13} color="black" />
+        <FontAwesome size={13} color="black" />
         <TextInput
           style={styles.input}
-          placeholder="Modelo do veículo"
+          placeholder="Agência"
           placeholderTextColor="#aaa"
-          value={modelo}
-          onChangeText={setModelo}
+          value={agencia}
+          onChangeText={setAgencia}
         />
       </View>
       <View style={styles.inputContainer}>
         <TextInput
           style={styles.input}
-          placeholder="Placa do veículo"
+          placeholder="Número da conta"
           placeholderTextColor="#aaa"
-          value={placa}
-          onChangeText={setPlaca}
+          value={n_conta}
+          onChangeText={setNConta}
         />
       </View>
       <View style={styles.inputContainer}>
-        {/* TODO: input de foto da cnh */}
+        <TextInput
+          style={styles.input}
+          placeholder="Titular da conta"
+          placeholderTextColor="#aaa"
+          value={titular_conta}
+          onChangeText={setTitular}
+        />
+      </View>
+      <View style={styles.inputContainer}>
+        <TextInput
+          style={styles.input}
+          placeholder="CPF do titular"
+          placeholderTextColor="#aaa"
+          value={cpf_titular}
+          onChangeText={(s) => setCpf2(s, setCpfTitular)}
+        />
       </View>
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
       <TouchableOpacity style={styles.button} onPress={handleRegister}>
-        <Text style={styles.buttonText}>Avançar</Text>
+        <Text style={styles.buttonText}>Cadastrar</Text>
       </TouchableOpacity>
     </View>
   );

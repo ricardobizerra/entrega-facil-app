@@ -40,20 +40,13 @@ export default function OnBoardScreen() {
   if (screen === 1 && !_kind.includes('entregador')) {
     setScreen(2)
   }
-  // TODO: mais números para representar as etapas do cadastro
   else if (screen === 2 && !_kind.includes('armazenador') || screen === 3) {
+    console.log("here2")
     router.push({
-      pathname: '/(tabs)/HomeScreen',
-      params: {
-        email: user?.email,
-        name: user?.name,
-        phone: user?.phone,
-        kind: user?.kind
-      },
+      pathname: '/register/setDadosBancarios',
+      params: { email: user?.email, name: user?.name, phone: user?.phone, kind: user?.kind, id: user?.id, _screen: screen },
     });
   }
-
-
 
   return (
     <View style={styles.container}>
