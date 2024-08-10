@@ -77,7 +77,7 @@ export default function OnBoardScreen() {
           <Image source={require('@/assets/images/tela_cadastro2.png')} style={styles.image} />
           <Text style={styles.text}>Cadastre o local do armazém e dados de armazenador</Text>
           <Text style={styles.subtext}>Para utilizar o Tá Entregue, é preciso primeiro ter um local de armazém cadastrado</Text>
-          {!user?.location && (
+          {(
             <TouchableOpacity style={styles.locationButton} onPress={() => {
               router.push({
                 pathname: '/register/setLocalArmazem',

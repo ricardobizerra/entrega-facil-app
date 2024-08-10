@@ -12,6 +12,8 @@ export default function RegisterScreen() {
   const params = useLocalSearchParams()
   const email: string = String(params.email)
   const [comunidade, setComunidade] = useState('');
+  const [bairro, setBairro] = useState('');
+  const [capacidade, setCapacidade] = useState('');
   const cep_default = '00000-000'
   const [cep, setCep] = useState(cep_default);
   const [logradouro, setLogradouro] = useState('');
@@ -43,8 +45,10 @@ export default function RegisterScreen() {
 
     try {
       await updateDoc(doc(database, "users", String(params.id)), {
-        endereço: {
+        armazem: {
           comunidade,
+          bairro,
+          capacidade,
           cep,
           logradouro,
           numero,
@@ -63,7 +67,7 @@ export default function RegisterScreen() {
       }
       
       const newUser = newUserSnapshot.docs[0].data();
-      newUser._screen = 2
+      newUser._screen = 3
       newUser.id = newUserSnapshot.docs[0].id
       router.push({
         pathname: '/register/onBoard',
@@ -82,7 +86,7 @@ export default function RegisterScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.subtitle}>Informações de entrega</Text>
+      <Text style={styles.subtitle}>Endereço do armazém</Text>
       <View style={styles.inputContainer}>
         <FontAwesome name="users" size={24} color="black" />
         <TextInput
@@ -93,7 +97,27 @@ export default function RegisterScreen() {
           onChangeText={setComunidade}
         />
       </View>
-        <View style={styles.inputContainer} onTouchStart={() => {
+      <View style={styles.inputContainer}>
+        <FontAwesome name="users" size={24} color="black" />
+        <TextInput
+          style={styles.input}
+          placeholder="Bairro"
+          placeholderTextColor="#aaa"
+          value={bairro}
+          onChangeText={setBairro}
+        />
+      </View>
+      <View style={styles.inputContainer}>
+        <FontAwesome name="users" size={24} color="black" />
+        <TextInput
+          style={styles.input}
+          placeholder="Capacidade"
+          placeholderTextColor="#aaa"
+          value={capacidade}
+          onChangeText={setCapacidade}
+        />
+      </View>
+      <View style={styles.inputContainer} onTouchStart={() => {
           if (cep === cep_default) {
             setCep('')
           }
