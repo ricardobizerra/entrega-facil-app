@@ -180,7 +180,7 @@ const styles = StyleSheet.create({
   nextButton: {
     backgroundColor: '#ffa500',
     padding: 16,
-    borderRadius: 8,
+    borderRadius: 999,
     alignItems: 'center',
     justifyContent: 'center',
     marginVertical: 16,
