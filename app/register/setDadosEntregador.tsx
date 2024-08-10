@@ -11,46 +11,30 @@ import Logo from '@/assets/images/Logo.svg';
 export default function RegisterScreen() {
   const params = useLocalSearchParams()
   const email: string = String(params.email)
-  const [comunidade, setComunidade] = useState('');
-  const cep_default = '00000-000'
-  const [cep, setCep] = useState(cep_default);
-  const [logradouro, setLogradouro] = useState('');
-  const [numero, setNumero] = useState('');
-  const [complemento, setComplemento] = useState('');
+  const [veiculo, setVeiculo] = useState('');
+  const [modelo, setModelo] = useState('');
+  const [placa, setPlaca] = useState('');
+  const [fotoCnh, setCnh] = useState('');
   const [visible, setVisible] = useState(false);
   const [error, setError] = useState('');
-  const numerical = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0']
-
-  async function setCep2(cep: string) {
-    const last = cep[cep.length - 1]
-    if (!numerical.includes(last) || cep.length > 14) {
-      cep = cep.substring(0, cep.length-1)
-    }
-    if (cep.length === 6) {
-      var diff = ['-']
-      cep = cep.substring(0, cep.length-1) + diff + [last]
-    }
-    setCep(cep)
-  }
 
   const router = useRouter();
 
   async function handleRegister() {
-    if (!comunidade || !cep || !logradouro || !cep || !numero || cep===cep_default || cep.length != 9) {
+    if (!veiculo || !modelo || (veiculo.toLowerCase() !== 'bicicleta' && !placa) || (veiculo.toLowerCase() !== 'bicicleta' && !fotoCnh)) {
       setError('Por favor, preencha todos os campos');
       return;
     }
 
     try {
       await updateDoc(doc(database, "users", String(params.id)), {
-        endereço: {
-          comunidade,
-          cep,
-          logradouro,
-          numero,
-          complemento
+        entregador: {
+          veiculo,
+          modelo,
+          placa
         }
       });
+      // TODO: armazenar foto cnh
 
       // Fetch the newly created user data
       const usersRef = collection(database, 'users');
@@ -66,7 +50,7 @@ export default function RegisterScreen() {
       newUser._screen = 2
       newUser.id = newUserSnapshot.docs[0].id
       router.push({
-        pathname: '/register/setDadosEntregador',
+        pathname: '/register/onBoard',
         params: newUser,
       });
 
@@ -83,58 +67,38 @@ export default function RegisterScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.subtitle}>Informações de entrega</Text>
-      <Text style={styles.subsubtitle}>Comunidade e Localização</Text>
+      <Text style={styles.subsubtitle}>Informações do entregador</Text>
       <View style={styles.inputContainer}>
-        <FontAwesome name="users" size={24} color="black" />
+        <FontAwesome name="bicycle" size={24} color="black" />
         <TextInput
           style={styles.input}
-          placeholder="Comunidade de Atuação"
+          placeholder="Tipo de veículo"
           placeholderTextColor="#aaa"
-          value={comunidade}
-          onChangeText={setComunidade}
-        />
-      </View>
-        <View style={styles.inputContainer} onTouchStart={() => {
-          if (cep === cep_default) {
-            setCep('')
-          }
-        }}>
-        <FontAwesome name="info" size={14} color="black" />
-        <TextInput
-          style={styles.input}
-          placeholder="CEP"
-          placeholderTextColor="#aaa"
-          value={cep}
-          onChangeText={setCep2}
+          value={veiculo}
+          onChangeText={setVeiculo}
         />
       </View>
       <View style={styles.inputContainer}>
-        <FontAwesome name="address-book" size={13} color="black" />
+        <FontAwesome name="modx" size={13} color="black" />
         <TextInput
           style={styles.input}
           placeholder="Logradouro"
           placeholderTextColor="#aaa"
-          value={logradouro}
-          onChangeText={setLogradouro}
+          value={modelo}
+          onChangeText={setModelo}
         />
       </View>
       <View style={styles.inputContainer}>
         <TextInput
           style={styles.input}
-          placeholder="Numero"
+          placeholder="Placa do veículo"
           placeholderTextColor="#aaa"
-          value={numero}
-          onChangeText={setNumero}
+          value={placa}
+          onChangeText={setPlaca}
         />
       </View>
       <View style={styles.inputContainer}>
-        <TextInput
-          style={styles.input}
-          placeholder="Complemento"
-          placeholderTextColor="#aaa"
-          value={complemento}
-          onChangeText={setComplemento}
-        />
+        {/* TODO: input de foto da cnh */}
       </View>
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
       <TouchableOpacity style={styles.button} onPress={handleRegister}>

@@ -161,14 +161,8 @@ export default function RegisterScreen() {
       </View>
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
       <TouchableOpacity style={styles.button} onPress={handleRegister}>
-        <Text style={styles.buttonText}>Cadastrar</Text>
+        <Text style={styles.buttonText}>Avançar</Text>
       </TouchableOpacity>
-      <Text style={styles.loginText}>
-        Já possui uma conta?{' '}
-        <Text style={styles.loginLink} onPress={() => router.push('/')}>
-          Faça login
-        </Text>
-      </Text>
     </View>
   );
 }
