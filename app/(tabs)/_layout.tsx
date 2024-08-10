@@ -67,6 +67,20 @@ export default function TabLayout() {
             )},
         }}
       />
+      <Tabs.Screen
+        name="perfil"
+        options={{
+          title: '',
+          tabBarIcon: ({focused} : { focused: boolean}) => {
+            return(
+              <IconContainer>
+                {focused? <FocusBar/> : ''}
+                {focused? <HomeFocused/> : <Home/>}
+                <Text>Perfil</Text>
+              </IconContainer>
+            )},
+        }}
+      />
     </Tabs>
   );
 }

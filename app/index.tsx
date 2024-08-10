@@ -44,6 +44,8 @@ export default function LoginScreen() {
 
         // Save the user email to AsyncStorage
         await AsyncStorage.setItem('userEmail', userData.email);
+        await AsyncStorage.setItem('phone', userData.phone);
+        await AsyncStorage.setItem('userId', userData.id);
 
         router.push({
           pathname: '/(tabs)/HomeScreen',
