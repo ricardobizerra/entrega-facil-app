@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Text, View, Image, TouchableOpacity, Dimensions } from 'react-native';
+import { Modal, Text, View, Image, TouchableOpacity, Dimensions, TextInput } from 'react-native';
 import { database } from '@/config/firebaseConfig';
 import { collection, getDocs, query, where, Timestamp } from 'firebase/firestore';
 import styled from 'styled-components/native';
@@ -8,7 +8,7 @@ import { ptBR } from 'date-fns/locale';
 import Logo from '@/assets/images/logo-no-text.svg';
 import Back from '@/assets/images/chevron-left.svg';
 import MapView, { Marker } from 'react-native-maps';
-import { FontAwesome } from '@expo/vector-icons'; // Import para ícones
+import { FontAwesome } from '@expo/vector-icons';
 
 const MapContainer = styled(MapView)`
   width: 100%;
@@ -175,6 +175,38 @@ const OptionText = styled(Text)`
   margin-left: 10px;
 `;
 
+const IncidentFormContainer = styled(View)`
+  width: 100%;
+  padding: 20px;
+  background-color: white;
+  border-radius: 10px;
+  align-items: center;
+`;
+
+const IncidentFormInput = styled(TextInput)`
+  height: 100px;
+  border-width: 1px;
+  border-color: #cccccc;
+  border-radius: 8px;
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 10px;
+`;
+
+const IncidentFormButton = styled(TouchableOpacity)`
+  background-color: #FF5733;
+  padding: 10px;
+  border-radius: 8px;
+  align-items: center;
+  width: 100%;
+`;
+
+const IncidentFormButtonText = styled(Text)`
+  color: white;
+  font-size: 16px;
+  font-weight: bold;
+`;
+
 interface PackageOrderDetailItem {
   id: string;
   status: string;
@@ -200,6 +232,8 @@ interface OrderDetailProps {
 const OrderDetail: React.FC<OrderDetailProps> = ({ client_id, product_id, closeModal }) => {
   const [packageOrderDetail, setPackageOrderDetail] = useState<PackageOrderDetailItem[]>([]);
   const [isPopupVisible, setIsPopupVisible] = useState(false);
+  const [isIncidentFormVisible, setIsIncidentFormVisible] = useState(false);
+  const [incidentDescription, setIncidentDescription] = useState('');
 
   const fetchOrderDetailFromFirebase = async () => {
     try {
@@ -273,8 +307,10 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ client_id, product_id, closeM
       return format(date, "'amanhã às' HH:mm", { locale: ptBR });
     } else if (isYesterday(date)) {
       return format(date, "'ontem às' HH:mm", { locale: ptBR });
+    } else if (date.getFullYear() === now.getFullYear()) {
+      return format(date, "dd 'de' MMMM", { locale: ptBR });
     } else {
-      return format(date, "'em' dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
+      return format(date, "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
     }
   };
 
@@ -282,128 +318,150 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ client_id, product_id, closeM
     <OrderDetailContainer>
       <BackButtonContainer>
         <TouchableOpacity onPress={handleBack}>
-          <Back />
+          <Back width={24} height={24} />
         </TouchableOpacity>
       </BackButtonContainer>
 
-      {packageOrderDetail.map((item, index) => (
-        <View key={index}>
-          <OrderDetailIcon>
-            <View>
-              <OrderTitleText>Pedido {item.order_name}</OrderTitleText>
-              <ActionContainer>
-                <ActionDot
+      {packageOrderDetail.map((order, index) => (
+        <OrderDetailItem key={order.id}>
+          <View>
+            <OrderDetailIcon>
+              <StyledImage source={{ uri: order.icon }} />
+              <OrderDetailText>
+                {order.order_name}{"\n"}{order.client_name}
+              </OrderDetailText>
+            </OrderDetailIcon>
+
+            <OrderDetailIcon>
+              <LabelText>Endereço:</LabelText>
+              <ValueText>{order.address}</ValueText>
+            </OrderDetailIcon>
+
+            <OrderDetailIcon>
+              <LabelText>Peso:</LabelText>
+              <ValueText>{getWeightText(order.weight)}</ValueText>
+            </OrderDetailIcon>
+
+            <OrderDetailIcon>
+              <LabelText>Última Ação:</LabelText>
+              <ValueText>{getLastAction(order.delivery_actions).action}</ValueText>
+            </OrderDetailIcon>
+
+            <OrderDetailIcon>
+              <LabelText>Data:</LabelText>
+              <ValueText>{getRelativeDate(order.arrival_date.toDate())}</ValueText>
+            </OrderDetailIcon>
+
+            <MapContainer
+              initialRegion={{
+                latitude: order.location.latitude,
+                longitude: order.location.longitude,
+                latitudeDelta: 0.05,
+                longitudeDelta: 0.05,
+              }}
+            >
+              <Marker
+                coordinate={{
+                  latitude: order.location.latitude,
+                  longitude: order.location.longitude,
+                }}
+                title="Localização da Entrega"
+                description={order.address}
+              />
+            </MapContainer>
+
+            <ActionContainer>
+              <PopupButton onPress={() => setIsPopupVisible(true)}>
+                <PopupButtonText>Notificar Problema</PopupButtonText>
+              </PopupButton>
+            </ActionContainer>
+          </View>
+
+          <Modal visible={isPopupVisible} transparent={true} animationType="fade">
+            <PopupContainer>
+              <PopupContent>
+                <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 10 }}>
+                  Relatar Problema
+                </Text>
+                <TouchableOpacity 
                   style={{
-                    backgroundColor: getStatusColor(item.status.toLowerCase()),
+                    position: 'absolute',
+                    top: 10,
+                    right: 10,
+                    zIndex: 1
                   }}
+                  onPress={() => setIsPopupVisible(false)}
+                >
+                  <FontAwesome name="times" size={24} color="#3A3A3A" />
+                </TouchableOpacity>
+                <NotificationOption onPress={() => setIsIncidentFormVisible(true)}>
+                  <FontAwesome name="clock-o" size={24} color="#3A3A3A" />
+                  <OptionText>Atraso no Trânsito</OptionText>
+                </NotificationOption>
+
+                <NotificationOption onPress={() => setIsIncidentFormVisible(true)}>
+                  <FontAwesome name="user-times" size={24} color="#3A3A3A" />
+                  <OptionText>Responsável não encontrado no local de entrega</OptionText>
+                </NotificationOption>
+
+                <NotificationOption onPress={() => setIsIncidentFormVisible(true)}>
+                  <FontAwesome name="map-marker" size={24} color="#3A3A3A" />
+                  <OptionText>Endereço incorreto</OptionText>
+                </NotificationOption>
+
+                <NotificationOption onPress={() => setIsIncidentFormVisible(true)}>
+                  <FontAwesome name="umbrella" size={24} color="#3A3A3A" />
+                  <OptionText>Pedido sofreu acidente no percurso</OptionText>
+                </NotificationOption>
+
+                <NotificationOption onPress={() => setIsIncidentFormVisible(true)}>
+                  <FontAwesome name="exclamation-triangle" size={24} color="#3A3A3A" />
+                  <OptionText>Entregador sofreu acidente no percurso</OptionText>
+                </NotificationOption>
+
+                <NotificationOption onPress={() => setIsIncidentFormVisible(true)}>
+                  <FontAwesome name="times-circle" size={24} color="#3A3A3A" />
+                  <OptionText>Outro</OptionText>
+                </NotificationOption>
+              </PopupContent>
+            </PopupContainer>
+          </Modal>
+
+          <Modal visible={isIncidentFormVisible} transparent={true} animationType="fade">
+            <PopupContainer>
+              <IncidentFormContainer>
+                <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 10 }}>
+                  Nos conte mais sobre o imprevisto
+                </Text>
+
+                <Text style={{ fontSize: 14, color: '#666', marginBottom: 10 }}>
+                  Nos informe se algo tiver ocorrido ao longo dessa entrega.
+                </Text>
+
+                <IncidentFormInput
+                  multiline
+                  maxLength={500}
+                  placeholder="Descreva o imprevisto aqui..."
+                  value={incidentDescription}
+                  onChangeText={setIncidentDescription}
                 />
-                <OrderDetailText>
-                  {item.status === 'received' ? `Finalizado` : `Em andamento`}
-                </OrderDetailText>
 
-                <OrderDetailText>
-                  {item.status === 'received'
-                    ? `Finalizado ${getRelativeDate(item.arrival_date.toDate())}`
-                    : `Iniciado ${getRelativeDate(item.creation_date.toDate())}`}
-                </OrderDetailText>
-              </ActionContainer>
-              <OrderTitleText>Dados do pedido</OrderTitleText>
-              <StyledImage source={{ uri: item.icon }} style={{ marginTop: 10, marginBottom: 10 }} />
-              <ActionContainer>
-                <OrderDetailText>{`Enviado para ${item.client_name}`}</OrderDetailText>
-              </ActionContainer>
-              <ActionContainer>
-                <OrderDetailText>{`Endereço: ${item.address}`}</OrderDetailText>
-              </ActionContainer>
-              <ActionContainer>
-                <OrderDetailText>{getWeightText(item.weight)}</OrderDetailText>
-              </ActionContainer>
-              {item.sensitive && (
-                <ActionContainer>
-                  <OrderDetailText>{`Conteúdo Sensível`}</OrderDetailText>
-                </ActionContainer>
-              )}
-              <ActionContainer>
-                <OrderDetailText>{`Última ação: ${getLastAction(item.delivery_actions).action} em ${getLastAction(item.delivery_actions).timestamp
-                  }`}</OrderDetailText>
-              </ActionContainer>
-            </View>
-          </OrderDetailIcon>
+                <Text style={{ alignSelf: 'flex-end', marginBottom: 10 }}>
+                  {incidentDescription.length}/500 caracteres
+                </Text>
 
-          {/* Botão para abrir o Popup */}
-          <PopupButton onPress={() => setIsPopupVisible(true)}>
-            <PopupButtonText>Notificar Imprevisto</PopupButtonText>
-          </PopupButton>
+                <IncidentFormButton onPress={() => { /* Adicionar lógica para enviar o formulário */ }}>
+                  <IncidentFormButtonText>Enviar</IncidentFormButtonText>
+                </IncidentFormButton>
 
-          {/* Mapa */}
-          <MapContainer
-            initialRegion={{
-              latitude: item.location.latitude,
-              longitude: item.location.longitude,
-              latitudeDelta: 0.0922,
-              longitudeDelta: 0.0421,
-            }}
-          >
-            <Marker
-              coordinate={{ latitude: item.location.latitude, longitude: item.location.longitude }}
-            />
-          </MapContainer>
-        </View>
+                <PopupCloseButton onPress={() => setIsIncidentFormVisible(false)}>
+                  <PopupCloseButtonText>Fechar</PopupCloseButtonText>
+                </PopupCloseButton>
+              </IncidentFormContainer>
+            </PopupContainer>
+          </Modal>
+        </OrderDetailItem>
       ))}
-
-      {/* Modal Popup */}
-      <Modal
-        visible={isPopupVisible}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={() => setIsPopupVisible(false)}
-      >
-        <PopupContainer>
-          <PopupContent>
-            <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 10 }}>
-              Notificar Improvisto
-            </Text>
-            <Text style={{ marginBottom: 20 }}>
-              Nos informe se algo tiver ocorrido ao longo dessa entrega.
-            </Text>
-
-            {/* Opções de Notificação */}
-            <NotificationOption>
-              <FontAwesome name="clock-o" size={24} color="black" />
-              <OptionText>Atraso no trânsito</OptionText>
-            </NotificationOption>
-
-            <NotificationOption>
-              <FontAwesome name="user-times" size={24} color="black" />
-              <OptionText>Responsável não encontrado no local de entrega</OptionText>
-            </NotificationOption>
-
-            <NotificationOption>
-              <FontAwesome name="map-marker" size={24} color="black" />
-              <OptionText>Endereço incorreto</OptionText>
-            </NotificationOption>
-
-            <NotificationOption>
-              <FontAwesome name="car" size={24} color="black" />
-              <OptionText>Pedido sofreu acidente no percurso</OptionText>
-            </NotificationOption>
-
-            <NotificationOption>
-              <FontAwesome name="ambulance" size={24} color="black" />
-              <OptionText>Entregador sofreu acidente no percurso</OptionText>
-            </NotificationOption>
-
-            <NotificationOption>
-              <FontAwesome name="ellipsis-h" size={24} color="black" />
-              <OptionText>Outro</OptionText>
-            </NotificationOption>
-
-            <PopupCloseButton onPress={() => setIsPopupVisible(false)}>
-              <PopupCloseButtonText>Fechar</PopupCloseButtonText>
-            </PopupCloseButton>
-          </PopupContent>
-        </PopupContainer>
-      </Modal>
     </OrderDetailContainer>
   );
 };
