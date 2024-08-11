@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, TextInput, StyleSheet, TouchableOpacity, Text, Alert, Image } from 'react-native';
+import { View, TextInput, StyleSheet, TouchableOpacity, Text, Alert, Image, ScrollView } from 'react-native';
 import { addDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { database } from '@/config/firebaseConfig';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -8,6 +8,8 @@ import { FontAwesome } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Logo from '@/assets/images/Logo.svg';
 import setCpf2 from './set_cpf'
+import { ImageInput } from '@/components/form/image/BaseImageInput';
+import { uploadImageAsync } from '@/utils/upload-image-firebase';
 
 export default function RegisterScreen() {
   const params = useLocalSearchParams()
@@ -21,6 +23,8 @@ export default function RegisterScreen() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [visible, setVisible] = useState(false);
   const [error, setError] = useState('');
+  const [fotoRgFrente, setRgFrente] = useState<string | undefined>(undefined);
+  const [fotoRgVerso, setRgVerso] = useState<string | undefined>(undefined);
   const numerical = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0']
 
   async function setPhone2(phone: string) {
@@ -72,6 +76,26 @@ export default function RegisterScreen() {
       return;
     }
 
+    if (!fotoRgFrente || !fotoRgVerso) {
+      setError('Por favor, adicione as fotos do seu RG');
+      return;
+    }
+
+
+    let rgUrlFrente: string | undefined = undefined;
+    let rgUrlVerso: string | undefined = undefined;
+
+    try {
+      rgUrlFrente = await uploadImageAsync(fotoRgFrente);
+      rgUrlVerso = await uploadImageAsync(fotoRgVerso);
+    } catch (e: unknown) {
+      if (e instanceof Error) {
+        alert('Erro ao armazenar foto do RG: ' + e.message);
+      } else {
+        alert('Erro desconhecido ao adicionar usuário');
+      }
+    }
+
     try {
       await addDoc(usersRef, {
         name,
@@ -79,7 +103,9 @@ export default function RegisterScreen() {
         phone,
         email,
         password,
-        kind
+        kind,
+        rgUrlFrente,
+        rgUrlVerso
       });
 
       // Fetch the newly created user data
@@ -110,6 +136,7 @@ export default function RegisterScreen() {
   }
 
   return (
+    <ScrollView>
     <View style={styles.container}>
       <Logo/>
       <Text style={styles.subtitle}>Cadastro</Text>
@@ -180,6 +207,20 @@ export default function RegisterScreen() {
           secureTextEntry={true}
         />
       </View>
+      <ImageInput
+        value={fotoRgFrente}
+        onChange={setRgFrente}
+        placeholder="Foto do RG (frente)"
+        modalTitle="Envie uma foto da frente do seu RG/CIN"
+        modalDescription="Nossa equipe verificará sua habilitação para validar seu cadastro em nosso time de colaboradores"
+      />
+      <ImageInput
+        value={fotoRgVerso}
+        onChange={setRgVerso}
+        placeholder="Foto do RG (verso)"
+        modalTitle="Envie uma foto do verso do seu RG/CIN"
+        modalDescription="Nossa equipe verificará sua habilitação para validar seu cadastro em nosso time de colaboradores"
+      />
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
       <TouchableOpacity style={styles.button} onPress={handleRegister}>
         <Text style={styles.buttonText}>Cadastrar</Text>
@@ -190,7 +231,8 @@ export default function RegisterScreen() {
           Faça login
         </Text>
       </Text>
-    </View>
+      </View>
+    </ScrollView>
   );
 }
 
