@@ -7,6 +7,8 @@ import { Snackbar } from 'react-native-paper';
 import { FontAwesome } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Logo from '@/assets/images/Logo.svg';
+import * as ImagePicker from 'expo-image-picker';
+import { uploadImageAsync } from '@/utils/upload-image-firebase';
 
 export default function RegisterScreen() {
   const params = useLocalSearchParams()
@@ -14,7 +16,7 @@ export default function RegisterScreen() {
   const [veiculo, setVeiculo] = useState('');
   const [modelo, setModelo] = useState('');
   const [placa, setPlaca] = useState('');
-  const [fotoCnh, setCnh] = useState('');
+  const [fotoCnh, setCnh] = useState<string | undefined>(undefined);
   const [visible, setVisible] = useState(false);
   const [error, setError] = useState('');
 
@@ -26,15 +28,36 @@ export default function RegisterScreen() {
       return;
     }
 
+    if (!fotoCnh) {
+      setError('Por favor, adicione uma foto da CNH');
+      return;
+    }
+
+    let cnhUrl: string | undefined = undefined;
+
+    try {
+      cnhUrl = await uploadImageAsync(fotoCnh);
+    } catch (e: unknown) {
+      if (e instanceof Error) {
+        alert('Erro ao armazenar foto da CNH: ' + e.message);
+      } else {
+        alert('Erro desconhecido ao adicionar usuário');
+      }
+    }
+
+    if (!cnhUrl) {
+      return;
+    }
+
     try {
       await updateDoc(doc(database, "users", String(params.id)), {
         entregador: {
           veiculo,
           modelo,
-          placa
+          placa,
+          cnhUrl,
         }
       });
-      // TODO: armazenar foto cnh
 
       // Fetch the newly created user data
       const usersRef = collection(database, 'users');
@@ -61,6 +84,18 @@ export default function RegisterScreen() {
       }
     }
   }
+
+  const pickImage = async () => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.All,
+      allowsEditing: true,
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      setCnh(result.assets[0].uri);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -95,9 +130,15 @@ export default function RegisterScreen() {
           onChangeText={setPlaca}
         />
       </View>
-      <View style={styles.inputContainer}>
-        {/* TODO: input de foto da cnh */}
-      </View>
+      <TouchableOpacity style={styles.inputContainer} onPress={pickImage}>
+        <TextInput
+          style={styles.input}
+          placeholder="Foto da CNH"
+          placeholderTextColor="#aaa"
+          value={fotoCnh}
+          editable={false}
+        />
+      </TouchableOpacity>
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
       <TouchableOpacity style={styles.button} onPress={handleRegister}>
         <Text style={styles.buttonText}>Avançar</Text>
