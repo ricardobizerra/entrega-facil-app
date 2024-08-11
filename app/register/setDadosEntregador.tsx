@@ -9,6 +9,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Logo from '@/assets/images/Logo.svg';
 import * as ImagePicker from 'expo-image-picker';
 import { uploadImageAsync } from '@/utils/upload-image-firebase';
+import { ImageInput } from '@/components/form/image/BaseImageInput';
 
 export default function RegisterScreen() {
   const params = useLocalSearchParams()
@@ -132,15 +133,11 @@ export default function RegisterScreen() {
           onChangeText={setPlaca}
         />
       </View>
-      <TouchableOpacity style={styles.inputContainer} onPress={pickImage}>
-        <TextInput
-          style={styles.input}
-          placeholder="Foto da CNH"
-          placeholderTextColor="#aaa"
-          value={fotoCnh}
-          editable={false}
-        />
-      </TouchableOpacity>
+      <ImageInput
+        value={fotoCnh}
+        onChange={setCnh}
+        placeholder="Foto da CNH"
+      />
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
       <TouchableOpacity style={styles.button} onPress={handleRegister}>
         <Text style={styles.buttonText}>Avançar</Text>
