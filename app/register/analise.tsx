@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, TextInput, StyleSheet, TouchableOpacity, Text, Alert, Image } from 'react-native';
-import { getDocs, query, collection, where } from 'firebase/firestore';
+import { addDoc, collection, query, where, getDocs, updateDoc, doc } from 'firebase/firestore';
 import { database } from '@/config/firebaseConfig';
 import { useRouter } from 'expo-router';
 import { FontAwesome } from '@expo/vector-icons';
@@ -8,9 +8,20 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Logo from '@/assets/images/analise.svg';
 
 export default function LoginScreen() {
-  const router = useRouter();
 
+  const [id, setId] = useState('')
+  const router = useRouter();
+  useEffect(() => {
+    async function fetchData() { 
+      setId(String(await AsyncStorage.getItem('userId')))
+    }
+    fetchData();
+  }, []);
   async function handleLogin() {
+    await updateDoc(doc(database, "users", id), {
+      confirmed: true
+    });
+    
     router.push({
         pathname: '/'
     });

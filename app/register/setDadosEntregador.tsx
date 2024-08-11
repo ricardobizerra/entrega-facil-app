@@ -53,8 +53,6 @@ export default function RegisterScreen() {
         pathname: '/register/onBoard',
         params: newUser,
       });
-
-      setVisible(true);
     } catch (e: unknown) {
       if (e instanceof Error) {
         alert('Erro ao adicionar usuário: ' + e.message);

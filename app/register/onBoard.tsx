@@ -41,7 +41,7 @@ export default function OnBoardScreen() {
     setScreen(2)
   }
   else if (screen === 2 && !_kind.includes('armazenador') || screen === 3) {
-    router.push({
+    router.replace({
       pathname: '/register/setDadosBancarios',
       params: { email: user?.email, name: user?.name, phone: user?.phone, kind: user?.kind, id: user?.id, _screen: screen },
     });

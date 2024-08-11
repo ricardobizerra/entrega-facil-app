@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, TextInput, StyleSheet, TouchableOpacity, Text, Alert, Image } from 'react-native';
 import { addDoc, collection, query, where, getDocs, updateDoc, doc } from 'firebase/firestore';
 import { database } from '@/config/firebaseConfig';
@@ -11,7 +11,7 @@ import setCpf2 from './set_cpf'
 
 export default function RegisterScreen() {
   const params = useLocalSearchParams()
-  const email: string = String(params.email)
+  const [id, setId] = useState('')
   const [banco, setBanco] = useState('');
   const [agencia, setAgencia] = useState('');
   const [n_conta, setNConta] = useState('');
@@ -21,6 +21,12 @@ export default function RegisterScreen() {
   const [error, setError] = useState('');
 
   const router = useRouter();
+  useEffect(() => {
+    async function fetchData() { 
+      setId(String(await AsyncStorage.getItem('userId')))
+    }
+    fetchData();
+  }, []);
 
   async function handleRegister() {
     if (!banco || !agencia || !n_conta || !titular_conta || !cpf_titular) {
@@ -29,7 +35,7 @@ export default function RegisterScreen() {
     }
 
     try {
-      await updateDoc(doc(database, "users", String(params.id)), {
+      await updateDoc(doc(database, "users", id), {
         dados_bancarios: {
           banco,
           agencia,
@@ -41,9 +47,8 @@ export default function RegisterScreen() {
 
       // Fetch the newly created user data
       const usersRef = collection(database, 'users');
-      const newUserQuery = query(usersRef, where('email', '==', email));
+      const newUserQuery = query(usersRef, where('__name__', '==', id));
       const newUserSnapshot = await getDocs(newUserQuery);
-      await AsyncStorage.setItem('userEmail', email);
 
       if (newUserSnapshot.empty) {
         router.back()
