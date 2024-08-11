@@ -89,6 +89,10 @@ export default function RegisterScreen() {
 
       if (!newUserSnapshot.empty) {
         const newUser = newUserSnapshot.docs[0].data();
+        const id = newUserSnapshot.docs[0].id;
+        newUser.id = id
+        await AsyncStorage.setItem('phone', newUser.phone);
+        await AsyncStorage.setItem('userId', newUser.id);
         router.push({
           pathname: '/register/onBoard',
           params: newUser,

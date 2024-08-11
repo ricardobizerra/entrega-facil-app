@@ -21,6 +21,12 @@ export default function LoginScreen() {
         let userData = querySnapshot.docs[0].data();
         const userId = querySnapshot.docs[0].id;
         userData.id = userId
+
+        // Save the user email to AsyncStorage
+        await AsyncStorage.setItem('userEmail', userData.email);
+        await AsyncStorage.setItem('phone', userData.phone);
+        await AsyncStorage.setItem('userId', userData.id);
+
         if (!userData.kind) {
           userData.cadastrado = 'cadastrado'
           // Save the user email to AsyncStorage
@@ -31,8 +37,7 @@ export default function LoginScreen() {
           });
           return
         }
-        // TODO: substituir aqui por um campo de confirmed
-        else if (!userData.endereço && !userData.endereço_armazem) {
+        else if (!userData.confirmed) {
           // Save the user email to AsyncStorage
           await AsyncStorage.setItem('userEmail', userData.email);
           router.push({
@@ -41,11 +46,6 @@ export default function LoginScreen() {
           });
           return
         }
-
-        // Save the user email to AsyncStorage
-        await AsyncStorage.setItem('userEmail', userData.email);
-        await AsyncStorage.setItem('phone', userData.phone);
-        await AsyncStorage.setItem('userId', userData.id);
 
         router.push({
           pathname: '/(tabs)/HomeScreen',
