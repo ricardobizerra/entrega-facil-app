@@ -28,36 +28,47 @@ export default function RegisterScreen() {
       return;
     }
 
-    if (!fotoCnh) {
+    let cnhUrl: string | undefined = undefined;
+    if (veiculo.toLowerCase() !== 'bicicleta' && !fotoCnh) {
       setError('Por favor, adicione uma foto da CNH');
       return;
     }
+    else if (!!fotoCnh) {
+      try {
+        cnhUrl = await uploadImageAsync(fotoCnh);
+      } catch (e: unknown) {
+        if (e instanceof Error) {
+          alert('Erro ao armazenar foto da CNH: ' + e.message);
+        } else {
+          alert('Erro desconhecido ao adicionar usuário');
+        }
+      }
 
-    let cnhUrl: string | undefined = undefined;
-
-    try {
-      cnhUrl = await uploadImageAsync(fotoCnh);
-    } catch (e: unknown) {
-      if (e instanceof Error) {
-        alert('Erro ao armazenar foto da CNH: ' + e.message);
-      } else {
-        alert('Erro desconhecido ao adicionar usuário');
+      if (!cnhUrl) {
+        return;
       }
     }
 
-    if (!cnhUrl) {
-      return;
-    }
-
     try {
-      await updateDoc(doc(database, "users", String(params.id)), {
-        entregador: {
-          veiculo,
-          modelo,
-          placa,
-          cnhUrl,
-        }
-      });
+      if (!!fotoCnh) {
+        await updateDoc(doc(database, "users", String(params.id)), {
+          entregador: {
+            veiculo,
+            modelo,
+            placa,
+            cnhUrl,
+          }
+        });
+      }
+      else {
+        await updateDoc(doc(database, "users", String(params.id)), {
+          entregador: {
+            veiculo,
+            modelo,
+            placa,
+          }
+        });
+      }
 
       // Fetch the newly created user data
       const usersRef = collection(database, 'users');
