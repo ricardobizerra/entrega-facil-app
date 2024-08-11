@@ -36,7 +36,7 @@ export default function RegisterScreen() {
   const router = useRouter();
 
   async function handleRegister() {
-    if (!comunidade || !cep || !logradouro || !cep || !numero || cep===cep_default || cep.length != 9) {
+    if (!comunidade) {
       setError('Por favor, preencha todos os campos');
       return;
     }
@@ -44,11 +44,7 @@ export default function RegisterScreen() {
     try {
       await updateDoc(doc(database, "users", String(params.id)), {
         endereço: {
-          comunidade,
-          cep,
-          logradouro,
-          numero,
-          complemento
+          comunidade
         }
       });
 
@@ -92,48 +88,6 @@ export default function RegisterScreen() {
           placeholderTextColor="#aaa"
           value={comunidade}
           onChangeText={setComunidade}
-        />
-      </View>
-        <View style={styles.inputContainer} onTouchStart={() => {
-          if (cep === cep_default) {
-            setCep('')
-          }
-        }}>
-        <FontAwesome name="info" size={14} color="black" />
-        <TextInput
-          style={styles.input}
-          placeholder="CEP"
-          placeholderTextColor="#aaa"
-          value={cep}
-          onChangeText={setCep2}
-        />
-      </View>
-      <View style={styles.inputContainer}>
-        <FontAwesome name="address-book" size={13} color="black" />
-        <TextInput
-          style={styles.input}
-          placeholder="Logradouro"
-          placeholderTextColor="#aaa"
-          value={logradouro}
-          onChangeText={setLogradouro}
-        />
-      </View>
-      <View style={styles.inputContainer}>
-        <TextInput
-          style={styles.input}
-          placeholder="Numero"
-          placeholderTextColor="#aaa"
-          value={numero}
-          onChangeText={setNumero}
-        />
-      </View>
-      <View style={styles.inputContainer}>
-        <TextInput
-          style={styles.input}
-          placeholder="Complemento"
-          placeholderTextColor="#aaa"
-          value={complemento}
-          onChangeText={setComplemento}
         />
       </View>
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
