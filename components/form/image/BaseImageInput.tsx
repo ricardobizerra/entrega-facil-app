@@ -1,17 +1,21 @@
 import { Dispatch, SetStateAction, useState } from 'react';
-import { Modal, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, TextInput, TouchableOpacity } from 'react-native';
 import { ImageInputModal } from './ImageInputModal';
 
 interface ImageInputProps {
   value: string | undefined;
   onChange: Dispatch<SetStateAction<string | undefined>>;
   placeholder: string;
+  modalTitle: string;
+  modalDescription: string;
 }
 
 export function ImageInput({
   value,
   onChange,
   placeholder,
+  modalTitle,
+  modalDescription,
 }: ImageInputProps) {
   const [openModal, setOpenModal] = useState(false);
 
@@ -31,8 +35,8 @@ export function ImageInput({
         visible={openModal}
         setVisible={setOpenModal}
         onChange={onChange}
-        title="Envie uma foto da frente de sua CNH"
-        description="Nossa equipe verificará sua habilitação para validar seu cadastro em nosso time de colaboradores"
+        title={modalTitle}
+        description={modalDescription}
       />
     </>
   );

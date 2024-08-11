@@ -7,7 +7,6 @@ import { Snackbar } from 'react-native-paper';
 import { FontAwesome } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Logo from '@/assets/images/Logo.svg';
-import * as ImagePicker from 'expo-image-picker';
 import { uploadImageAsync } from '@/utils/upload-image-firebase';
 import { ImageInput } from '@/components/form/image/BaseImageInput';
 
@@ -88,18 +87,6 @@ export default function RegisterScreen() {
     }
   }
 
-  const pickImage = async () => {
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.All,
-      allowsEditing: true,
-      quality: 1,
-    });
-
-    if (!result.canceled) {
-      setCnh(result.assets[0].uri);
-    }
-  };
-
   return (
     <View style={styles.container}>
       <Text style={styles.subtitle}>Informações de entrega</Text>
@@ -137,6 +124,8 @@ export default function RegisterScreen() {
         value={fotoCnh}
         onChange={setCnh}
         placeholder="Foto da CNH"
+        modalTitle="Envie uma foto da frente de sua CNH"
+        modalDescription="Nossa equipe verificará sua habilitação para validar seu cadastro em nosso time de colaboradores"
       />
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
       <TouchableOpacity style={styles.button} onPress={handleRegister}>
