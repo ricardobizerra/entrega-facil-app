@@ -9,6 +9,8 @@ import Order from '@/assets/images/delivery_dining-stroke.svg'; // Import the cu
 import OrderFocused from '@/assets/images/delivery_dining.svg'; // Import the custom tab bar icon component
 import Home from '@/assets/images/home-stroke.svg'; // Import the custom tab bar icon component
 import HomeFocused from '@/assets/images/home.svg'; // Import the custom tab bar icon component
+import Perfil from '@/assets/images/perfil.svg'; // Import the custom tab bar icon component
+import PerfilFocused from '@/assets/images/perfil-focused.svg'; // Import the custom tab bar icon component
 import styled from 'styled-components';
 import { View, Text } from 'react-native';
 import Focus from '@/assets/images/home-indicator.svg'; // Import the custom tab bar icon component
@@ -75,7 +77,7 @@ export default function TabLayout() {
             return(
               <IconContainer>
                 {focused? <FocusBar/> : ''}
-                {focused? <HomeFocused/> : <Home/>}
+                {focused? <PerfilFocused/> : <Perfil/>}
                 <Text>Perfil</Text>
               </IconContainer>
             )},
