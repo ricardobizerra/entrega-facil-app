@@ -8,27 +8,28 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Logo from '@/assets/images/Logo.svg';
 
 export default function LoginScreen() {
-  const [email, setEmail] = useState('');
+  const [code, setCode] = useState('');
   const [password, setPassword] = useState('');
   const router = useRouter();
 
   async function handleLogin() {
     try {
-      const q = query(collection(database, 'users'), where('email', '==', email), where('password', '==', password));
+      const q = query(collection(database, 'entregador'), where('code', '==', code), where('password', '==', password));
       const querySnapshot = await getDocs(q);
 
       if (!querySnapshot.empty) {
-        const userData = querySnapshot.docs[0].data();
+        const entregadorData = querySnapshot.docs[0].data();
         
         // Save the user email to AsyncStorage
-        await AsyncStorage.setItem('userEmail', userData.email);
+        await AsyncStorage.setItem('entregadorCode', entregadorData.code);
 
         router.push({
-          pathname: '/(tabs)/HomeScreen',
+          pathname: '/entregador/HomeScreen',
           params: {
-            email: userData.email,
-            name: userData.name,
-            phone: userData.phone,
+            email: entregadorData.email,
+            code: entregadorData.code,
+            name: entregadorData.name,
+            phone: entregadorData.phone,
           },
         });
       } else {
@@ -46,15 +47,15 @@ export default function LoginScreen() {
   return (
     <View style={styles.container}>
       <Logo/>
-      <Text style={styles.subtitle}>Login</Text>
+      <Text style={styles.subtitle}>Login Entregador</Text>
       <View style={styles.inputContainer}>
         <FontAwesome name="envelope" size={24} color="black" />
         <TextInput
           style={styles.input}
-          placeholder="Email"
+          placeholder="Código"
           placeholderTextColor="#aaa"
-          value={email}
-          onChangeText={setEmail}
+          value={code}
+          onChangeText={setCode}
           keyboardType="email-address"
           autoCapitalize="none"
         />
@@ -74,9 +75,9 @@ export default function LoginScreen() {
         <Text style={styles.buttonText}>Login</Text>
       </TouchableOpacity>
       <Text style={styles.registerText}>
-        Não possui conta?{' '}
+        Voltar para a{' '}
         <Text style={styles.registerLink} onPress={() => router.push('/')}>
-          Faça seu cadastro
+          página de cadastro
         </Text>
       </Text>
     </View>
