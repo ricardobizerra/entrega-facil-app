@@ -69,8 +69,6 @@ export default function RegisterScreen() {
     }
   }
 
-  // TODO: botões para atualizar os outros tipos de dados
-  // TODO: modificações nos outros componentes para comportar isso
   return (
     <View style={styles.container}>
       <Text style={styles.subtitle}>Atualizar Dados</Text>
