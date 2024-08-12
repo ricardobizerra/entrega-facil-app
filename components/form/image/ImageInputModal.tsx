@@ -19,7 +19,7 @@ export function ImageInputModal({
   title,
   description,
 }: ImageInputModalProps) {
-  const pickImage = async (mode: 'library' | 'camera') => {
+  const pickImage = async (mode: 'library' | 'camera' | 'remove') => {
     let result;
     if (mode === 'library') {
       result = await ImagePicker.launchImageLibraryAsync({
@@ -33,6 +33,9 @@ export function ImageInputModal({
         allowsEditing: true,
         quality: 1,
       });
+    }
+    else if (mode === 'remove') {
+      result = {canceled: false, assets: [{uri: undefined}]}
     }
 
     if (!result) return;
@@ -71,6 +74,13 @@ export function ImageInputModal({
         <MaterialCommunityIcons name="camera" size={28} color="#3a3a3a" />
         <Text style={styles.buttonText}>
           Tire uma foto
+        </Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.removePhotoButton} onPress={() => pickImage('remove')}>
+        <MaterialCommunityIcons size={20} color="#3a3a3a" />
+        <Text style={styles.buttonText}>
+          Remover foto
         </Text>
       </TouchableOpacity>
     </BaseModal>
@@ -112,6 +122,17 @@ const styles = StyleSheet.create({
   },
   takePhotoButton: {
     backgroundColor: '#ffe7b7',
+    padding: 8,
+    borderRadius: 50,
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: 16,
+  },
+  removePhotoButton: {
+    backgroundColor: '#fff7b7',
     padding: 8,
     borderRadius: 50,
     width: '100%',

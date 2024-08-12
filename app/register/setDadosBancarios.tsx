@@ -7,7 +7,7 @@ import { Snackbar } from 'react-native-paper';
 import { FontAwesome } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Logo from '@/assets/images/Logo.svg';
-import setCpf2 from './set_cpf'
+import { setCpf2 } from './set_field'
 
 export default function RegisterScreen() {
   const params = useLocalSearchParams()

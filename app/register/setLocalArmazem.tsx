@@ -7,6 +7,7 @@ import { Snackbar } from 'react-native-paper';
 import { FontAwesome } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Logo from '@/assets/images/Logo.svg';
+import { setCep2 } from './set_field'
 
 export default function RegisterScreen() {
   const params = useLocalSearchParams();
@@ -15,7 +16,7 @@ export default function RegisterScreen() {
   const [comunidade, setComunidade] = useState('');
   const [bairro, setBairro] = useState('');
   const [capacidade, setCapacidade] = useState('');
-  const cep_default = '00000-000'
+  const cep_default = ''
   const [cep, setCep] = useState(cep_default);
   const [logradouro, setLogradouro] = useState('');
   const [numero, setNumero] = useState('');
@@ -50,17 +51,6 @@ export default function RegisterScreen() {
 
   const numerical = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0']
 
-  async function setCep2(cep: string) {
-    const last = cep[cep.length - 1]
-    if (!numerical.includes(last) || cep.length > 14) {
-      cep = cep.substring(0, cep.length-1)
-    }
-    if (cep.length === 6) {
-      var diff = ['-']
-      cep = cep.substring(0, cep.length-1) + diff + [last]
-    }
-    setCep(cep)
-  }
 
   const router = useRouter();
 
@@ -161,7 +151,7 @@ export default function RegisterScreen() {
           placeholder="CEP"
           placeholderTextColor="#aaa"
           value={cep}
-          onChangeText={setCep2}
+          onChangeText={(s) => setCep2(s, setCep)}
         />}
       </View>
       <View style={styles.inputContainer}>
