@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, TextInput, StyleSheet, TouchableOpacity, Text, Alert, Image } from 'react-native';
 import { addDoc, collection, query, where, getDocs, updateDoc, doc } from 'firebase/firestore';
 import { database } from '@/config/firebaseConfig';
@@ -10,30 +10,32 @@ import Logo from '@/assets/images/Logo.svg';
 
 export default function RegisterScreen() {
   const params = useLocalSearchParams()
-  const email: string = String(params.email)
+  const [email, setEmail] = useState('')
+  const [id, setId] = useState('')
   const [comunidade, setComunidade] = useState('');
-  const cep_default = '00000-000'
-  const [cep, setCep] = useState(cep_default);
-  const [logradouro, setLogradouro] = useState('');
-  const [numero, setNumero] = useState('');
-  const [complemento, setComplemento] = useState('');
   const [visible, setVisible] = useState(false);
   const [error, setError] = useState('');
-  const numerical = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0']
-
-  async function setCep2(cep: string) {
-    const last = cep[cep.length - 1]
-    if (!numerical.includes(last) || cep.length > 14) {
-      cep = cep.substring(0, cep.length-1)
-    }
-    if (cep.length === 6) {
-      var diff = ['-']
-      cep = cep.substring(0, cep.length-1) + diff + [last]
-    }
-    setCep(cep)
-  }
 
   const router = useRouter();
+
+  useEffect(() => {
+    async function fetchData() { 
+      setVisible(false)
+      let id = String(await AsyncStorage.getItem('userId'))
+      setId(id)
+      setEmail(String(await AsyncStorage.getItem('userEmail')))
+      if (!!params.update) {
+        // Fetch user data
+        const usersRef = collection(database, 'users');
+        const newUserQuery = query(usersRef, where('__name__', '==', id));
+        const newUserSnapshot = await getDocs(newUserQuery);
+        const newUser = newUserSnapshot.docs[0].data();
+        setComunidade(newUser.endereço.comunidade)
+      }
+      setVisible(true)
+    }
+    fetchData();
+  }, []);
 
   async function handleRegister() {
     if (!comunidade) {
@@ -42,7 +44,7 @@ export default function RegisterScreen() {
     }
 
     try {
-      await updateDoc(doc(database, "users", String(params.id)), {
+      await updateDoc(doc(database, "users", id), {
         endereço: {
           comunidade
         }
@@ -52,7 +54,6 @@ export default function RegisterScreen() {
       const usersRef = collection(database, 'users');
       const newUserQuery = query(usersRef, where('email', '==', email));
       const newUserSnapshot = await getDocs(newUserQuery);
-      await AsyncStorage.setItem('userEmail', email);
 
       if (newUserSnapshot.empty) {
         router.back()
@@ -61,10 +62,16 @@ export default function RegisterScreen() {
       const newUser = newUserSnapshot.docs[0].data();
       newUser._screen = 2
       newUser.id = newUserSnapshot.docs[0].id
-      router.push({
-        pathname: '/register/setDadosEntregador',
-        params: newUser,
-      });
+
+      if (!!params.update) {
+        router.back()
+      }
+      else {
+        router.push({
+          pathname: '/register/setDadosEntregador',
+          params: newUser,
+        });
+      }
 
       setVisible(true);
     } catch (e: unknown) {
@@ -82,17 +89,18 @@ export default function RegisterScreen() {
       <Text style={styles.subsubtitle}>Comunidade e Localização</Text>
       <View style={styles.inputContainer}>
         <FontAwesome name="users" size={24} color="black" />
-        <TextInput
+        {visible && <TextInput
           style={styles.input}
           placeholder="Comunidade de Atuação"
           placeholderTextColor="#aaa"
           value={comunidade}
           onChangeText={setComunidade}
-        />
+        />}
       </View>
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
       <TouchableOpacity style={styles.button} onPress={handleRegister}>
-        <Text style={styles.buttonText}>Avançar</Text>
+        {!!params.update && <Text style={styles.buttonText}>Atualizar</Text>}
+        {!params.update && <Text style={styles.buttonText}>Avançar</Text>}
       </TouchableOpacity>
     </View>
   );

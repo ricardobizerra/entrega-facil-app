@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, TextInput, StyleSheet, TouchableOpacity, Text, Alert, Image } from 'react-native';
 import { addDoc, collection, query, where, getDocs, updateDoc, doc } from 'firebase/firestore';
 import { database } from '@/config/firebaseConfig';
@@ -11,47 +11,72 @@ import { uploadImageAsync } from '@/utils/upload-image-firebase';
 import { ImageInput } from '@/components/form/image/BaseImageInput';
 
 export default function RegisterScreen() {
-  const params = useLocalSearchParams()
-  const email: string = String(params.email)
+  const params = useLocalSearchParams();
+  const [email, setEmail] = useState('');
+  const [id, setId] = useState('');
   const [veiculo, setVeiculo] = useState('');
   const [modelo, setModelo] = useState('');
   const [placa, setPlaca] = useState('');
   const [fotoCnh, setCnh] = useState<string | undefined>(undefined);
+  const [cnhUrl, setCnhUrl] = useState<string | undefined>(undefined);
   const [visible, setVisible] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+      async function fetchData() { 
+        setVisible(false)
+        let id = String(await AsyncStorage.getItem('userId'))
+        setId(id)
+        setEmail(String(await AsyncStorage.getItem('userEmail')))
+        if (!!params.update) {
+          // Fetch user data
+          const usersRef = collection(database, 'users');
+          const newUserQuery = query(usersRef, where('__name__', '==', id));
+          const newUserSnapshot = await getDocs(newUserQuery);
+          const newUser = newUserSnapshot.docs[0].data();
+          setVeiculo(newUser.entregador.veiculo)
+          setModelo(newUser.entregador.modelo)
+          setPlaca(newUser.entregador.placa)
+          setCnhUrl(newUser.entregador.cnhUrl)
+        }
+        setVisible(true)
+      }
+      fetchData();
+    }, []);
 
   const router = useRouter();
 
   async function handleRegister() {
-    if (!veiculo || !modelo || (veiculo.toLowerCase() !== 'bicicleta' && !placa) || (veiculo.toLowerCase() !== 'bicicleta' && !fotoCnh)) {
+    if (!veiculo || !modelo || (veiculo.toLowerCase() !== 'bicicleta' && !placa)) {
       setError('Por favor, preencha todos os campos');
       return;
     }
 
-    let cnhUrl: string | undefined = undefined;
-    if (veiculo.toLowerCase() !== 'bicicleta' && !fotoCnh) {
-      setError('Por favor, adicione uma foto da CNH');
-      return;
-    }
-    else if (!!fotoCnh) {
-      try {
-        cnhUrl = await uploadImageAsync(fotoCnh);
-      } catch (e: unknown) {
-        if (e instanceof Error) {
-          alert('Erro ao armazenar foto da CNH: ' + e.message);
-        } else {
-          alert('Erro desconhecido ao adicionar usuário');
-        }
-      }
-
-      if (!cnhUrl) {
+    if (!params.update) {
+      if (veiculo.toLowerCase() !== 'bicicleta' && !fotoCnh) {
+        setError('Por favor, adicione uma foto da CNH');
         return;
+      }
+      else if (!!fotoCnh) {
+        try {
+          setCnhUrl(await uploadImageAsync(fotoCnh));
+        } catch (e: unknown) {
+          if (e instanceof Error) {
+            alert('Erro ao armazenar foto da CNH: ' + e.message);
+          } else {
+            alert('Erro desconhecido ao adicionar usuário');
+          }
+        }
+
+        if (!cnhUrl) {
+          return;
+        }
       }
     }
 
     try {
-      if (!!fotoCnh) {
-        await updateDoc(doc(database, "users", String(params.id)), {
+      if (!!cnhUrl) {
+        await updateDoc(doc(database, "users", id), {
           entregador: {
             veiculo,
             modelo,
@@ -61,7 +86,7 @@ export default function RegisterScreen() {
         });
       }
       else {
-        await updateDoc(doc(database, "users", String(params.id)), {
+        await updateDoc(doc(database, "users", id), {
           entregador: {
             veiculo,
             modelo,
@@ -83,10 +108,15 @@ export default function RegisterScreen() {
       const newUser = newUserSnapshot.docs[0].data();
       newUser._screen = 2
       newUser.id = newUserSnapshot.docs[0].id
-      router.push({
-        pathname: '/register/onBoard',
-        params: newUser,
-      });
+      if (!params.update) {
+        router.push({
+          pathname: '/register/onBoard',
+          params: newUser,
+        });
+      }
+      else {
+        router.back()
+      }
     } catch (e: unknown) {
       if (e instanceof Error) {
         alert('Erro ao adicionar usuário: ' + e.message);
@@ -102,43 +132,44 @@ export default function RegisterScreen() {
       <Text style={styles.subsubtitle}>Informações do entregador</Text>
       <View style={styles.inputContainer}>
         <FontAwesome name="bicycle" size={24} color="black" />
-        <TextInput
+        {visible && <TextInput
           style={styles.input}
           placeholder="Tipo de veículo"
           placeholderTextColor="#aaa"
           value={veiculo}
           onChangeText={setVeiculo}
-        />
+        />}
       </View>
       <View style={styles.inputContainer}>
         <FontAwesome name="modx" size={13} color="black" />
-        <TextInput
+        {visible && <TextInput
           style={styles.input}
           placeholder="Modelo do veículo"
           placeholderTextColor="#aaa"
           value={modelo}
           onChangeText={setModelo}
-        />
+        />}
       </View>
       <View style={styles.inputContainer}>
-        <TextInput
+        {visible && <TextInput
           style={styles.input}
           placeholder="Placa do veículo"
           placeholderTextColor="#aaa"
           value={placa}
           onChangeText={setPlaca}
-        />
+        />}
       </View>
-      <ImageInput
+      {!params.update && <ImageInput
         value={fotoCnh}
         onChange={setCnh}
         placeholder="Foto da CNH"
         modalTitle="Envie uma foto da frente de sua CNH"
         modalDescription="Nossa equipe verificará sua habilitação para validar seu cadastro em nosso time de colaboradores"
-      />
+      />}
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
       <TouchableOpacity style={styles.button} onPress={handleRegister}>
-        <Text style={styles.buttonText}>Avançar</Text>
+        {!params.update && <Text style={styles.buttonText}>Avançar</Text>}
+        {!!params.update && <Text style={styles.buttonText}>Atualizar</Text>}
       </TouchableOpacity>
     </View>
   );

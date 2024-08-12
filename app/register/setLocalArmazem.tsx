@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, TextInput, StyleSheet, TouchableOpacity, Text, Alert, Image } from 'react-native';
 import { addDoc, collection, query, where, getDocs, updateDoc, doc } from 'firebase/firestore';
 import { database } from '@/config/firebaseConfig';
@@ -9,8 +9,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Logo from '@/assets/images/Logo.svg';
 
 export default function RegisterScreen() {
-  const params = useLocalSearchParams()
-  const email: string = String(params.email)
+  const params = useLocalSearchParams();
+  const [email, setEmail] = useState('');
+  const [id, setId] = useState('');
   const [comunidade, setComunidade] = useState('');
   const [bairro, setBairro] = useState('');
   const [capacidade, setCapacidade] = useState('');
@@ -21,6 +22,32 @@ export default function RegisterScreen() {
   const [complemento, setComplemento] = useState('');
   const [visible, setVisible] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    async function fetchData() { 
+      setVisible(false)
+      let id = String(await AsyncStorage.getItem('userId'))
+      setId(id)
+      setEmail(String(await AsyncStorage.getItem('userEmail')))
+      if (!!params.update) {
+        // Fetch user data
+        const usersRef = collection(database, 'users');
+        const newUserQuery = query(usersRef, where('__name__', '==', id));
+        const newUserSnapshot = await getDocs(newUserQuery);
+        const newUser = newUserSnapshot.docs[0].data();
+        setComunidade(newUser.armazem.comunidade)
+        setBairro(newUser.armazem.bairro)
+        setCapacidade(newUser.armazem.capacidade)
+        setCep(newUser.armazem.cep)
+        setLogradouro(newUser.armazem.logradouro)
+        setNumero(newUser.armazem.numero)
+        setComplemento(newUser.armazem.complemento)
+      }
+      setVisible(true)
+    }
+    fetchData();
+  }, []);
+
   const numerical = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0']
 
   async function setCep2(cep: string) {
@@ -38,13 +65,13 @@ export default function RegisterScreen() {
   const router = useRouter();
 
   async function handleRegister() {
-    if (!comunidade || !cep || !logradouro || !cep || !numero || cep===cep_default || cep.length != 9) {
+    if (!comunidade || !bairro || !cep || !logradouro || !numero || cep===cep_default || cep.length != 9) {
       setError('Por favor, preencha todos os campos');
       return;
     }
 
     try {
-      await updateDoc(doc(database, "users", String(params.id)), {
+      await updateDoc(doc(database, "users", id), {
         armazem: {
           comunidade,
           bairro,
@@ -69,10 +96,16 @@ export default function RegisterScreen() {
       const newUser = newUserSnapshot.docs[0].data();
       newUser._screen = 3
       newUser.id = newUserSnapshot.docs[0].id
-      router.push({
-        pathname: '/register/onBoard',
-        params: newUser,
-      });
+
+      if (!!params.update) {
+        router.back()
+      }
+      else {
+        router.push({
+          pathname: '/register/onBoard',
+          params: newUser,
+        });
+      }
 
       setVisible(true);
     } catch (e: unknown) {
@@ -89,79 +122,80 @@ export default function RegisterScreen() {
       <Text style={styles.subtitle}>Endereço do armazém</Text>
       <View style={styles.inputContainer}>
         <FontAwesome name="users" size={24} color="black" />
-        <TextInput
+        {visible && <TextInput
           style={styles.input}
           placeholder="Comunidade de Atuação"
           placeholderTextColor="#aaa"
           value={comunidade}
           onChangeText={setComunidade}
-        />
+        />}
       </View>
       <View style={styles.inputContainer}>
         <FontAwesome name="users" size={24} color="black" />
-        <TextInput
+        {visible && <TextInput
           style={styles.input}
           placeholder="Bairro"
           placeholderTextColor="#aaa"
           value={bairro}
           onChangeText={setBairro}
-        />
+        />}
       </View>
       <View style={styles.inputContainer}>
         <FontAwesome name="users" size={24} color="black" />
-        <TextInput
+        {visible && <TextInput
           style={styles.input}
           placeholder="Capacidade"
           placeholderTextColor="#aaa"
           value={capacidade}
           onChangeText={setCapacidade}
-        />
+        />}
       </View>
       <View style={styles.inputContainer} onTouchStart={() => {
-          if (cep === cep_default) {
+          if (cep === cep_default && !params.update) {
             setCep('')
           }
         }}>
         <FontAwesome name="info" size={14} color="black" />
-        <TextInput
+        {visible && <TextInput
           style={styles.input}
           placeholder="CEP"
           placeholderTextColor="#aaa"
           value={cep}
           onChangeText={setCep2}
-        />
+        />}
       </View>
       <View style={styles.inputContainer}>
         <FontAwesome name="address-book" size={13} color="black" />
-        <TextInput
+        {visible && <TextInput
           style={styles.input}
           placeholder="Logradouro"
           placeholderTextColor="#aaa"
           value={logradouro}
           onChangeText={setLogradouro}
-        />
+        />}
       </View>
       <View style={styles.inputContainer}>
-        <TextInput
+        {visible && <TextInput
           style={styles.input}
           placeholder="Numero"
           placeholderTextColor="#aaa"
           value={numero}
           onChangeText={setNumero}
-        />
+        />}
       </View>
       <View style={styles.inputContainer}>
-        <TextInput
+        {visible && <TextInput
           style={styles.input}
           placeholder="Complemento"
           placeholderTextColor="#aaa"
           value={complemento}
           onChangeText={setComplemento}
-        />
+        />}
       </View>
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
       <TouchableOpacity style={styles.button} onPress={handleRegister}>
-        <Text style={styles.buttonText}>Avançar</Text>
+        {!params.update && <Text style={styles.buttonText}>Avançar</Text>}
+        {!!params.update && <Text style={styles.buttonText}>Atualizar</Text>}
       </TouchableOpacity>
     </View>
   );

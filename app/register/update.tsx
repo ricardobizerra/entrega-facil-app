@@ -14,6 +14,7 @@ export default function RegisterScreen() {
   const [phone, setPhone] = useState('');
   const [id, setId] = useState('');
   const [email, setEmail] = useState('');
+  const [kind, setKind] = useState('')
   const [visible, setVisible] = useState(false);
   const [error, setError] = useState('');
 
@@ -22,6 +23,7 @@ export default function RegisterScreen() {
       setPhone(String(await AsyncStorage.getItem('phone')))
       setId(String(await AsyncStorage.getItem('userId')))
       setEmail(String(await AsyncStorage.getItem('userEmail')))
+      setKind(String(await AsyncStorage.getItem('kind')))
     }
     fetchData();
   }, []);
@@ -67,9 +69,11 @@ export default function RegisterScreen() {
     }
   }
 
+  // TODO: botões para atualizar os outros tipos de dados
+  // TODO: modificações nos outros componentes para comportar isso
   return (
     <View style={styles.container}>
-      <Text style={styles.subtitle}>Dados Bancários</Text>
+      <Text style={styles.subtitle}>Atualizar Dados</Text>
       <View style={styles.inputContainer}>
         <FontAwesome name="phone" size={24} color="black" />
         <TextInput
@@ -81,6 +85,40 @@ export default function RegisterScreen() {
         />
       </View>
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
+      
+      {(kind == 'entregador' || kind=='entregador,armazenador') &&<TouchableOpacity style={styles.button2} onPress={() => {
+        router.push({
+          pathname: "register/setLocalEntrega",
+          params: { update: 'true' }
+        })
+      }}>
+        <Text style={styles.buttonText2}>&lt; Comunidade de entrega</Text>
+      </TouchableOpacity>}
+      {(kind == 'entregador' || kind == 'entregador,armazenador') && <TouchableOpacity style={styles.button2} onPress={() => {
+        router.push({
+          pathname: "register/setDadosEntregador",
+          params: { update: 'true' }
+        })
+      }}>
+        <Text style={styles.buttonText2}>&lt; Informações de entregador</Text>
+      </TouchableOpacity>}
+      {(kind == 'armazenador' || kind == 'entregador,armazenador') && <TouchableOpacity style={styles.button2} onPress={() => {
+        router.push({
+          pathname: "register/setLocalArmazem",
+          params: { update: 'true' }
+        })
+      }}>
+        <Text style={styles.buttonText2}>&lt; Informações de armazém</Text>
+      </TouchableOpacity>}
+      <TouchableOpacity style={styles.button2} onPress={() => {
+        router.push({
+          pathname: "register/setDadosBancarios",
+          params: {update: 'true'}
+        })
+      }}>
+        <Text style={styles.buttonText2}>&lt; Informações de pagamento</Text>
+      </TouchableOpacity>
+
       <TouchableOpacity style={styles.button} onPress={handleUpdate}>
         <Text style={styles.buttonText}>Atualizar</Text>
       </TouchableOpacity>
@@ -147,6 +185,21 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: '#fff',
+    fontSize: 18,
+  },
+  button2: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#000',
+    borderWidth: 2,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 5,
+    marginVertical: 10,
+    width: '80%'
+  },
+  buttonText2: {
+    textAlign: 'left',
+    color: '#000',
     fontSize: 18,
   },
   loginText: {

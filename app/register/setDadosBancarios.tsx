@@ -23,7 +23,22 @@ export default function RegisterScreen() {
   const router = useRouter();
   useEffect(() => {
     async function fetchData() { 
-      setId(String(await AsyncStorage.getItem('userId')))
+      setVisible(false);
+      let id = String(await AsyncStorage.getItem('userId'))
+      setId(id)
+      if (!!params.update) {
+        // Fetch user data
+        const usersRef = collection(database, 'users');
+        const newUserQuery = query(usersRef, where('__name__', '==', id));
+        const newUserSnapshot = await getDocs(newUserQuery);
+        const newUser = newUserSnapshot.docs[0].data();
+        setBanco(newUser.dados_bancarios.banco)
+        setNConta(newUser.dados_bancarios.n_conta)
+        setAgencia(newUser.dados_bancarios.agencia)
+        setTitular(newUser.dados_bancarios.titular_conta)
+        setCpf2(newUser.dados_bancarios.cpf_titular, setCpfTitular)
+      }
+      setVisible(true);
     }
     fetchData();
   }, []);
@@ -53,7 +68,12 @@ export default function RegisterScreen() {
       if (newUserSnapshot.empty) {
         router.back()
       }
-      router.push({ pathname: '/register/analise' })
+      if (!!params.update) {
+        router.back()
+      }
+      else {
+        router.push({ pathname: '/register/analise' })
+      }
 
       setVisible(true);
     } catch (e: unknown) {
@@ -70,54 +90,55 @@ export default function RegisterScreen() {
       <Text style={styles.subtitle}>Dados Bancários</Text>
       <View style={styles.inputContainer}>
         <FontAwesome size={24} color="black" />
-        <TextInput
+        {visible && <TextInput
           style={styles.input}
           placeholder="Banco"
           placeholderTextColor="#aaa"
           value={banco}
           onChangeText={setBanco}
-        />
+        />}
       </View>
       <View style={styles.inputContainer}>
         <FontAwesome size={13} color="black" />
-        <TextInput
+        {visible && <TextInput
           style={styles.input}
           placeholder="Agência"
           placeholderTextColor="#aaa"
           value={agencia}
           onChangeText={setAgencia}
-        />
+        />}
       </View>
       <View style={styles.inputContainer}>
-        <TextInput
+        {visible && <TextInput
           style={styles.input}
           placeholder="Número da conta"
           placeholderTextColor="#aaa"
           value={n_conta}
           onChangeText={setNConta}
-        />
+        />}
       </View>
       <View style={styles.inputContainer}>
-        <TextInput
+        {visible && <TextInput
           style={styles.input}
           placeholder="Titular da conta"
           placeholderTextColor="#aaa"
           value={titular_conta}
           onChangeText={setTitular}
-        />
+        />}
       </View>
       <View style={styles.inputContainer}>
-        <TextInput
+        {visible && <TextInput
           style={styles.input}
           placeholder="CPF do titular"
           placeholderTextColor="#aaa"
           value={cpf_titular}
           onChangeText={(s) => setCpf2(s, setCpfTitular)}
-        />
+        />}
       </View>
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
       <TouchableOpacity style={styles.button} onPress={handleRegister}>
-        <Text style={styles.buttonText}>Cadastrar</Text>
+        {!params.update && <Text style={styles.buttonText}>Cadastrar</Text>}
+        {!!params.update && <Text style={styles.buttonText}>Atualizar</Text>}
       </TouchableOpacity>
     </View>
   );

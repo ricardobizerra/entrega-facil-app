@@ -29,17 +29,16 @@ export default function LoginScreen() {
 
         if (!userData.kind) {
           userData.cadastrado = 'cadastrado'
-          // Save the user email to AsyncStorage
-          await AsyncStorage.setItem('userEmail', userData.email);
           router.push({
             pathname: '/register/profileSelection',
             params: userData,
           });
           return
         }
-        else if (!userData.confirmed) {
-          // Save the user email to AsyncStorage
-          await AsyncStorage.setItem('userEmail', userData.email);
+
+        await AsyncStorage.setItem('kind', userData.kind)
+
+        if (!userData.confirmed) {
           router.push({
             pathname: '/register/onBoard',
             params: userData,

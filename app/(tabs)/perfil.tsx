@@ -9,7 +9,6 @@ import Logo from '@/assets/images/analise.svg';
 
 export default function Perfil() {
   const router = useRouter();
-  console.log(useLocalSearchParams())
   const { name, email, phone } = useLocalSearchParams();
 
   async function handleUpdate() {
