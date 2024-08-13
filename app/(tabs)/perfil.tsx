@@ -6,7 +6,6 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { FontAwesome } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Logo from '@/assets/images/logo/LogoLogin.svg';
-import './perfil_styles.css';
 
 export default function Perfil() {
   const router = useRouter();
