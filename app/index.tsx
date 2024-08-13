@@ -26,6 +26,7 @@ export default function LoginScreen() {
         await AsyncStorage.setItem('userEmail', userData.email);
         await AsyncStorage.setItem('phone', userData.phone);
         await AsyncStorage.setItem('userId', userData.id);
+        await AsyncStorage.setItem('userName', userData.name);
 
         if (!userData.kind) {
           userData.cadastrado = 'cadastrado'
@@ -37,7 +38,6 @@ export default function LoginScreen() {
         }
 
         await AsyncStorage.setItem('kind', userData.kind)
-        console.log("kind1: "+userData.kind)
 
         if (!userData.confirmed) {
           router.push({

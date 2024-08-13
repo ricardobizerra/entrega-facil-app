@@ -129,6 +129,7 @@ export default function RegisterScreen() {
         await AsyncStorage.setItem('phone', newUser.phone);
         await AsyncStorage.setItem('userId', newUser.id);
         await AsyncStorage.setItem('kind', newUser.kind);
+        await AsyncStorage.setItem('userName', newUser.name);
         router.push({
           pathname: '/register/onBoard',
           params: newUser,
