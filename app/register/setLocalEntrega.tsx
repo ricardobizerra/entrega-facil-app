@@ -10,6 +10,7 @@ import Logo from '@/assets/images/Logo.svg';
 
 export default function RegisterScreen() {
   const params = useLocalSearchParams()
+  const kind = params.kind
   const [email, setEmail] = useState('')
   const [id, setId] = useState('')
   const [comunidade, setComunidade] = useState('');
@@ -50,26 +51,13 @@ export default function RegisterScreen() {
         }
       });
 
-      // Fetch the newly created user data
-      const usersRef = collection(database, 'users');
-      const newUserQuery = query(usersRef, where('email', '==', email));
-      const newUserSnapshot = await getDocs(newUserQuery);
-
-      if (newUserSnapshot.empty) {
-        router.back()
-      }
-      
-      const newUser = newUserSnapshot.docs[0].data();
-      newUser._screen = 2
-      newUser.id = newUserSnapshot.docs[0].id
-
       if (!!params.update) {
         router.back()
       }
       else {
         router.push({
           pathname: '/register/setDadosEntregador',
-          params: newUser,
+          params: {kind:kind, _screen: 2},
         });
       }
 

@@ -60,14 +60,6 @@ export default function RegisterScreen() {
         }
       });
 
-      // Fetch the newly created user data
-      const usersRef = collection(database, 'users');
-      const newUserQuery = query(usersRef, where('__name__', '==', id));
-      const newUserSnapshot = await getDocs(newUserQuery);
-
-      if (newUserSnapshot.empty) {
-        router.back()
-      }
       if (!!params.update) {
         router.back()
       }

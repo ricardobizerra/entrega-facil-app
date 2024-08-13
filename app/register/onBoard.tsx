@@ -4,6 +4,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { collection, doc, getDocs, query, updateDoc, where } from 'firebase/firestore';
 import { database } from '@/config/firebaseConfig';
 import { Snackbar } from 'react-native-paper';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface User {
   id?: string;
@@ -16,24 +17,13 @@ interface User {
 
 export default function OnBoardScreen() {
   const router = useRouter();
-  const [user, setUser] = useState<User>();
   const [visible, setVisible] = useState(false);
   const [screen, setScreen] = useState(1);
 
-  const { email, kind, _screen } = useLocalSearchParams();
+  const {kind, _screen } = useLocalSearchParams();
   if (_screen != null && Number(_screen) != screen) {
     setScreen(Number(_screen))
   }
-
-  useEffect(() => {
-    async function fetchData() {
-      const usersRef = collection(database, 'users');
-      const q = query(usersRef, where('email', '==', email));
-      const querySnapshot = await getDocs(q);
-      setUser({ ...querySnapshot.docs[0].data(), id: querySnapshot.docs[0].id } as User);
-    }
-    fetchData();
-  }, []);
   
   const _kind: string[] = String(kind!).split(',')!
 
@@ -43,7 +33,7 @@ export default function OnBoardScreen() {
   else if (screen === 2 && !_kind.includes('armazenador') || screen === 3) {
     router.replace({
       pathname: '/register/setDadosBancarios',
-      params: { email: user?.email, name: user?.name, phone: user?.phone, kind: user?.kind, id: user?.id, _screen: screen },
+      params: {  kind: kind, _screen: screen },
     });
   }
 
@@ -57,7 +47,7 @@ export default function OnBoardScreen() {
           <TouchableOpacity style={styles.nextButton} onPress={() => {
             router.push({
               pathname: '/register/setLocalEntrega',
-              params: { email: user?.email, name: user?.name, phone: user?.phone, kind: user?.kind, id: user?.id, _screen: screen },
+              params: { kind: kind, _screen: screen },
             });
           }}>
             <Text style={styles.buttonText}>Avançar</Text>
@@ -73,7 +63,7 @@ export default function OnBoardScreen() {
             <TouchableOpacity style={styles.locationButton} onPress={() => {
               router.push({
                 pathname: '/register/setLocalArmazem',
-                params: { email: user?.email, name: user?.name, phone: user?.phone, kind: user?.kind, id: user?.id, _screen: screen },
+                params: { kind: kind, _screen: screen},
               });
             }}>
               <Text style={styles.buttonText}>Avançar</Text>

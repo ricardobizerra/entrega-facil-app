@@ -12,6 +12,7 @@ import { ImageInput } from '@/components/form/image/BaseImageInput';
 
 export default function RegisterScreen() {
   const params = useLocalSearchParams();
+  const kind = params.kind
   const [email, setEmail] = useState('');
   const [id, setId] = useState('');
   const [veiculo, setVeiculo] = useState('');
@@ -48,13 +49,13 @@ export default function RegisterScreen() {
 
   async function handleRegister() {
     if (!veiculo || !modelo || (veiculo.toLowerCase() !== 'bicicleta' && !placa)) {
-      setError('Por favor, preencha todos os campos');
+      setError('Por favor, preencha todos os campos\nVeículos que não são bicicleta requerem placa e foto da cnh');
       return;
     }
 
     if (!params.update) {
       if (veiculo.toLowerCase() !== 'bicicleta' && !fotoCnh) {
-        setError('Por favor, adicione uma foto da CNH');
+        setError('Por favor, adicione uma foto da CNH\nVeículos que não são bicicleta requerem foto da cnh');
         return;
       }
       else if (!!fotoCnh) {
@@ -95,23 +96,10 @@ export default function RegisterScreen() {
         });
       }
 
-      // Fetch the newly created user data
-      const usersRef = collection(database, 'users');
-      const newUserQuery = query(usersRef, where('email', '==', email));
-      const newUserSnapshot = await getDocs(newUserQuery);
-      await AsyncStorage.setItem('userEmail', email);
-
-      if (newUserSnapshot.empty) {
-        router.back()
-      }
-      
-      const newUser = newUserSnapshot.docs[0].data();
-      newUser._screen = 2
-      newUser.id = newUserSnapshot.docs[0].id
       if (!params.update) {
         router.push({
           pathname: '/register/onBoard',
-          params: newUser,
+          params: {kind: kind, _screen: 2},
         });
       }
       else {

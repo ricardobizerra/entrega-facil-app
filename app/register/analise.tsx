@@ -18,13 +18,21 @@ export default function LoginScreen() {
     fetchData();
   }, []);
   async function handleLogin() {
-    await updateDoc(doc(database, "users", id), {
-      confirmed: true
-    });
-    
-    router.push({
-        pathname: '/'
-    });
+    try {
+      await updateDoc(doc(database, "users", id), {
+        confirmed: true
+      });
+      
+      router.push({
+          pathname: '/'
+      });
+      } catch (e: unknown) {
+      if (e instanceof Error) {
+        alert('Erro ao adicionar usuário: ' + e.message);
+      } else {
+        alert('Erro desconhecido ao adicionar usuário');
+      }
+    }
   }
 
   return (

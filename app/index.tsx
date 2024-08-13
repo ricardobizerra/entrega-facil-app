@@ -37,11 +37,12 @@ export default function LoginScreen() {
         }
 
         await AsyncStorage.setItem('kind', userData.kind)
+        console.log("kind1: "+userData.kind)
 
         if (!userData.confirmed) {
           router.push({
             pathname: '/register/onBoard',
-            params: userData,
+            params: {kind: userData.kind},
           });
           return
         }
