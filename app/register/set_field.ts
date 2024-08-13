@@ -25,24 +25,43 @@ export async function setCpf2(cpf: string, func: (arg0: string) => void) {
   func(enter_cpf)
 }
 
-
 export async function setCep2(cep: string, func: (arg0: string) => void) {
-  const last = cep[cep.length - 1]
-  if (!numerical.includes(last) || cep.length > 14) {
-    cep = cep.substring(0, cep.length-1)
+  let enter_cep = ''
+  for (let i = 0; i < cep.length; i++) {
+    const char = cep[i]
+    if (!numerical.includes(char)) {
+      continue
+    }
+    else if (enter_cep.length > 9) {
+      enter_cep = enter_cep.substring(0, 9)
+      break
+    }
+    else if (enter_cep.length === 5) {
+      var diff = ['-']
+      enter_cep = enter_cep + diff + [char]
+    }
+    else {
+      enter_cep = enter_cep + [char]
+    }
   }
-  if (cep.length === 6) {
-    var diff = ['-']
-    cep = cep.substring(0, cep.length-1) + diff + [last]
-  }
-  func(cep)
+  
+  func(enter_cep)
 }
 
-
 export async function setPhone2(phone: string, func: (arg0: string) => void) {
-  const last = phone[phone.length - 1]
-  if (!numerical.includes(last) || phone.length > 17) {
-    phone = phone.substring(0, phone.length-1)
+  let enter_phone = ''
+  for (let i = 0; i < phone.length; i++) {
+    const char = phone[i]
+    if (!numerical.includes(char)) {
+      continue
+    }
+    else if (enter_phone.length > 25) {
+      enter_phone = enter_phone.substring(0, 25)
+      break
+    }
+    else {
+      enter_phone = enter_phone + [char]
+    }
   }
-  func(phone)
+  func(enter_phone)
 }
