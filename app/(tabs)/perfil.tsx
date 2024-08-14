@@ -2,28 +2,37 @@ import React, { useEffect, useState } from 'react';
 import { View, TextInput, StyleSheet, TouchableOpacity, Text, Alert, Image } from 'react-native';
 import { getDocs, query, collection, where } from 'firebase/firestore';
 import { database } from '@/config/firebaseConfig';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { FontAwesome } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Logo from '@/assets/images/logo/LogoLogin.svg';
 
 export default function Perfil() {
+  const default_pic = 'https://firebasestorage.googleapis.com/v0/b/entrega-facil-cbb50.appspot.com/o/images%2Fdefault_pic?alt=media&token=11b19c9c-2818-4c6b-8784-12e295b53ec0'
+  const [profile_pic_url, setPic] = useState(default_pic)
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [id, setId] = useState('');
   const [phone, setPhone] = useState('')
   const [name, setName] = useState('')
 
-  useEffect(() => {
+  useFocusEffect(() => {
     async function fetchData() { 
       let id = String(await AsyncStorage.getItem('userId'))
       setId(id)
       setEmail(String(await AsyncStorage.getItem('userEmail')))
       setName(String(await AsyncStorage.getItem('userName')))
       setPhone(String(await AsyncStorage.getItem('phone')))
+      let pic = await AsyncStorage.getItem('userPic')
+      if (!!pic) {
+        setPic(String(pic))
+      }
+      else {
+        setPic(default_pic)
+      }
     }
     fetchData();
-  }, []);
+  });
 
   async function handleUpdate() {
     router.push({
@@ -50,7 +59,7 @@ export default function Perfil() {
   // armazenar o link dessa imagem no user e no async storage
   return (
     <View style={styles.container}>
-      <Image style={styles.circle} resizeMode='cover' src={ 'insira aqui um src'} />
+      <Image style={styles.circle} resizeMode='cover' src={profile_pic_url} />
       <Text style={styles.title}>{name}</Text>
       <Text style={styles.subtitle}>{email}</Text>
       <TouchableOpacity style={styles.button} onPress={handleUpdate}>
@@ -65,8 +74,8 @@ export default function Perfil() {
 
 const styles = StyleSheet.create({
   circle: {
-    width: 150,
-    height: 150,
+    width: 130,
+    height: 130,
     borderWidth: 2,
     borderRadius: 75
   },
