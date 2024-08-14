@@ -190,14 +190,14 @@ export default function HomeScreen() {
           <StyledTextInput placeholder="Buscar localidade" />
           <MapContainer
                   initialRegion={{
-                    latitude: -8,
-                    longitude: -30,
+                    latitude: -8.062858931467051,
+                    longitude: -34.871823742876316,
                     latitudeDelta: 0.0922,
                     longitudeDelta: 0.0421,
                   }}
                 >
                   <Marker
-                    coordinate={{ latitude: -8, longitude: -30 }}
+                    coordinate={{ latitude: -8.062858931467051, longitude: -34.87182374287631 }}
                   />
                 </MapContainer>
         </LocationSection>
