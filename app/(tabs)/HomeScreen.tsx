@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, Image, Modal } from 'react-native';
+import { View, Text, TextInput, Image, Modal, ScrollView } from 'react-native';
 import * as Location from 'expo-location';
 import { LocationObject } from 'expo-location';
 import Wave from '@/assets/images/wave.svg';
@@ -168,6 +168,7 @@ export default function HomeScreen() {
   );
 
   return (
+    <ScrollView>
     <HomeScreenContainer>
       {/* Cabeçalho */}
       <HeaderContainer>
@@ -217,6 +218,7 @@ export default function HomeScreen() {
         <NewThingsModal isVisible={isModalVisible && !notificationSeen} />
       </Container>
     </HomeScreenContainer>
+    </ScrollView>
   );
 }
 
@@ -237,6 +239,7 @@ const HeaderText = styled(Text)`
   color: #f2f2f2;
   font-size: 36px;
   font-weight: 700;
+  margin-top: 30px;
 `;
 
 const SubtitleText = styled(Text)`
