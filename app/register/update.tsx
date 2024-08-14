@@ -1,15 +1,21 @@
 import React, { useState, useEffect  } from 'react';
 import { View, TextInput, StyleSheet, TouchableOpacity, Text, Alert, Image } from 'react-native';
-import { addDoc, collection, query, where, getDocs, updateDoc, doc } from 'firebase/firestore';
+import { addDoc, collection, query, where, getDocs, updateDoc, doc, deleteField } from 'firebase/firestore';
 import { database } from '@/config/firebaseConfig';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Snackbar } from 'react-native-paper';
 import { FontAwesome } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Logo from '@/assets/images/Logo.svg';
-import setCpf2 from './set_cpf'
+import { setCpf2 } from './set_field'
+
+import { ImageInputModal } from '../../components/form/image/ImageInputModal';
+import { uploadImageAsync } from '@/utils/upload-image-firebase';
 
 export default function RegisterScreen() {
+  const [edit_file_url, _]= useState('https://firebasestorage.googleapis.com/v0/b/entrega-facil-cbb50.appspot.com/o/images%2Fdefault_pic?alt=media&token=362df6a1-25e8-4abb-9f5b-34759ce6f43d')
+  const default_pic = 'https://firebasestorage.googleapis.com/v0/b/entrega-facil-cbb50.appspot.com/o/images%2Fdefault_pic?alt=media&token=11b19c9c-2818-4c6b-8784-12e295b53ec0'
+  const [profile_pic_url, setPic] = useState(default_pic)
   const params = useLocalSearchParams()
   const [phone, setPhone] = useState('');
   const [id, setId] = useState('');
@@ -17,6 +23,29 @@ export default function RegisterScreen() {
   const [kind, setKind] = useState('')
   const [visible, setVisible] = useState(false);
   const [error, setError] = useState('');
+  const [show_pic_editor, showPicEditor] = useState(false);
+  const [pic_uri, setPicUri] = useState<string | undefined>(undefined);
+
+  async function setPicUri2(value) {
+    setPicUri(value)
+    if (!value) {
+      setPic(default_pic)
+      return
+    }
+
+    let picUrl: string | undefined = undefined;
+
+    try {
+     picUrl = await uploadImageAsync(value!);
+    } catch (e: unknown) {
+      if (e instanceof Error) {
+        alert('Erro ao armazenar foto do RG: ' + e.message);
+      } else {
+        alert('Erro desconhecido ao adicionar usuário');
+      }
+    }
+    setPic(picUrl!)
+  }
 
   useEffect(() => {
     async function fetchData() { 
@@ -24,6 +53,10 @@ export default function RegisterScreen() {
       setId(String(await AsyncStorage.getItem('userId')))
       setEmail(String(await AsyncStorage.getItem('userEmail')))
       setKind(String(await AsyncStorage.getItem('kind')))
+      let pic = await AsyncStorage.getItem('userPic')
+      if (!!pic) {
+        setPic(String(pic))
+      }
     }
     fetchData();
   }, []);
@@ -46,9 +79,18 @@ export default function RegisterScreen() {
     }
 
     try {
-      await updateDoc(doc(database, "users", id), {
-        phone: phone
-      });
+      if (profile_pic_url != default_pic) {
+        await updateDoc(doc(database, "users", id), {
+          phone: phone,
+          pic: profile_pic_url
+        });
+      }
+      else {
+        await updateDoc(doc(database, "users", id), {
+          phone: phone,
+          pic: deleteField()
+        });
+      }
 
       // Fetch the newly created user data
       const usersRef = collection(database, 'users');
@@ -56,6 +98,12 @@ export default function RegisterScreen() {
       const newUserSnapshot = (await getDocs(newUserQuery)).docs;
       await AsyncStorage.setItem('userEmail', newUserSnapshot[0].data().email);
       await AsyncStorage.setItem('phone', newUserSnapshot[0].data().phone);
+      if (!!newUserSnapshot[0].data().pic) {
+        await AsyncStorage.setItem('userPic', newUserSnapshot[0].data().pic);
+      }
+      else {
+        await AsyncStorage.removeItem('userPic')
+      }
 
       router.back()
 
@@ -72,6 +120,19 @@ export default function RegisterScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.subtitle}>Atualizar Dados</Text>
+      <Image style={styles.circle} resizeMode='cover' src={profile_pic_url} />
+      <>
+      <TouchableOpacity onPressIn={() => showPicEditor(true)}>
+        <Image style={styles.circle2} resizeMode='cover' src={edit_file_url} />
+      </TouchableOpacity>
+      <ImageInputModal
+        visible={show_pic_editor}
+        setVisible={showPicEditor}
+        onChange={(s) => setPicUri2(s)}
+        title={"Envie sua nova foto de perfil"}
+        description={""}
+        />
+      </>
       <View style={styles.inputContainer}>
         <FontAwesome name="phone" size={24} color="black" />
         <TextInput
@@ -125,6 +186,24 @@ export default function RegisterScreen() {
 }
 
 const styles = StyleSheet.create({
+  circle: {
+    width: 110,
+    height: 110,
+    borderWidth: 2,
+    borderRadius: 75,
+    marginBottom: 30,
+  },
+  circle2: {
+    width: 30,
+    height: 30,
+    borderEndWidth: 10,
+    borderRadius: 75,
+    marginBottom: -10,
+    bottom: 50,
+    left: 40,
+    backgroundColor: '#FFA500',
+    borderColor: '#FFA500',
+  },
   container: {
     flex: 1,
     padding: 16,

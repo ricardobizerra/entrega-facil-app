@@ -7,7 +7,7 @@ import { Snackbar } from 'react-native-paper';
 import { FontAwesome } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Logo from '@/assets/images/Logo.svg';
-import setCpf2 from './set_cpf'
+import { setCpf2, setPhone2 } from './set_field'
 import { ImageInput } from '@/components/form/image/BaseImageInput';
 import { uploadImageAsync } from '@/utils/upload-image-firebase';
 
@@ -15,7 +15,7 @@ export default function RegisterScreen() {
   const params = useLocalSearchParams()
   const kind = params.kind
   const [name, setName] = useState('');
-  const cpf_default = '000.000.000-00'
+  const cpf_default = ''
   const [cpf, setCpf] = useState(cpf_default);
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
@@ -23,17 +23,11 @@ export default function RegisterScreen() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [visible, setVisible] = useState(false);
   const [error, setError] = useState('');
+  const [load, setLoading] = useState('');
   const [fotoRgFrente, setRgFrente] = useState<string | undefined>(undefined);
   const [fotoRgVerso, setRgVerso] = useState<string | undefined>(undefined);
   const numerical = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0']
 
-  async function setPhone2(phone: string) {
-    const last = phone[phone.length - 1]
-    if (!numerical.includes(last) || phone.length > 17) {
-      phone = phone.substring(0, phone.length-1)
-    }
-    setPhone(phone)
-  }
 
   const router = useRouter();
   if (!kind) {
@@ -41,53 +35,67 @@ export default function RegisterScreen() {
   }
 
   async function handleRegister() {
+    if (!!load) {
+      return
+    }
+
+    let my_error = ''
     if (!kind) {
       router.replace('register/profileSelection')
     }
 
     if (!name || !email || !password || !confirmPassword || !phone || !cpf || cpf===cpf_default || cpf.length < 14) {
-      setError('Por favor, preencha todos os campos');
-      return;
+      my_error += '\n' + 'Por favor, preencha todos os campos';
     }
 
     if (password !== confirmPassword) {
-      setError('As senhas não coincidem');
-      setTimeout(() => setError(''), 4000);
-      return;
+      my_error += '\n' + 'As senhas não coincidem';
     }
 
     const allowedDomains = ['gmail.com', 'hotmail.com'];
     const emailDomain = email.split('@')[1];
 
-    if (!allowedDomains.includes(emailDomain)) {
-      setError('O email deve ser do domínio gmail.com ou hotmail.com');
-      setTimeout(() => setError(''), 4000);
+    if (!!email && !allowedDomains.includes(emailDomain)) {
+      my_error +=  '\n' + 'O email deve ser do domínio gmail.com\nou hotmail.com';
+    }
+
+    if (!fotoRgFrente || !fotoRgVerso) {
+      my_error +=  '\n' + 'Por favor, adicione as fotos do seu RG';
+    }
+  
+    if (my_error !== '') {
+      console.log(my_error)
+      setError(my_error)
       return;
     }
 
-    // Verificar se o email já está em uso
+    // Verificar se os dados já está em uso
+    {
+      const usersRef = collection(database, 'users');
+      const q = query(usersRef, where('cpf', '==', cpf));
+      const querySnapshot = await getDocs(q);
+
+      if (!querySnapshot.empty) {
+        setError('Este cpf já está sendo usado por outro usuário');
+        return;
+      }
+    }
+
     const usersRef = collection(database, 'users');
     const q = query(usersRef, where('email', '==', email));
     const querySnapshot = await getDocs(q);
 
     if (!querySnapshot.empty) {
       setError('Este email já está sendo usado por outro usuário');
-      setTimeout(() => setError(''), 2000);
       return;
     }
-
-    if (!fotoRgFrente || !fotoRgVerso) {
-      setError('Por favor, adicione as fotos do seu RG');
-      return;
-    }
-
 
     let rgUrlFrente: string | undefined = undefined;
     let rgUrlVerso: string | undefined = undefined;
 
     try {
-      rgUrlFrente = await uploadImageAsync(fotoRgFrente);
-      rgUrlVerso = await uploadImageAsync(fotoRgVerso);
+      rgUrlFrente = await uploadImageAsync(fotoRgFrente!);
+      rgUrlVerso = await uploadImageAsync(fotoRgVerso!);
     } catch (e: unknown) {
       if (e instanceof Error) {
         alert('Erro ao armazenar foto do RG: ' + e.message);
@@ -97,6 +105,7 @@ export default function RegisterScreen() {
     }
 
     try {
+      setLoading('Aguarde enquanto processamos as informações')
       await addDoc(usersRef, {
         name,
         cpf,
@@ -120,6 +129,10 @@ export default function RegisterScreen() {
         await AsyncStorage.setItem('phone', newUser.phone);
         await AsyncStorage.setItem('userId', newUser.id);
         await AsyncStorage.setItem('kind', newUser.kind);
+        await AsyncStorage.setItem('userName', newUser.name);
+        if (!!newUser.pic) {
+          await AsyncStorage.setItem('userPic', newUser.pic);
+        }
         router.push({
           pathname: '/register/onBoard',
           params: newUser,
@@ -134,6 +147,7 @@ export default function RegisterScreen() {
         alert('Erro desconhecido ao adicionar usuário');
       }
     }
+    setLoading('')
   }
 
   return (
@@ -172,7 +186,7 @@ export default function RegisterScreen() {
           placeholder="Telefone"
           placeholderTextColor="#aaa"
           value={phone}
-          onChangeText={setPhone2}
+          onChangeText={(s) => setPhone2(s, setPhone)}
         />
       </View>
       <View style={styles.inputContainer}>
@@ -213,16 +227,17 @@ export default function RegisterScreen() {
         onChange={setRgFrente}
         placeholder="Foto do RG (frente)"
         modalTitle="Envie uma foto da frente do seu RG/CIN"
-        modalDescription="Nossa equipe verificará sua habilitação para validar seu cadastro em nosso time de colaboradores"
+        modalDescription="Nossa equipe verificará sua identidade para validar seu cadastro em nosso time de colaboradores"
       />
       <ImageInput
         value={fotoRgVerso}
         onChange={setRgVerso}
         placeholder="Foto do RG (verso)"
         modalTitle="Envie uma foto do verso do seu RG/CIN"
-        modalDescription="Nossa equipe verificará sua habilitação para validar seu cadastro em nosso time de colaboradores"
+        modalDescription="Nossa equipe verificará sua identidade para validar seu cadastro em nosso time de colaboradores"
       />
-      {error ? <Text style={styles.errorText}>{error}</Text> : null}
+      {!load && error ? <Text style={styles.errorText}>{error}</Text> : null}
+      {load ? <Text style={styles.loadText}>{load}</Text> : null}
       <TouchableOpacity style={styles.button} onPress={handleRegister}>
         <Text style={styles.buttonText}>Cadastrar</Text>
       </TouchableOpacity>
@@ -305,6 +320,10 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: 'red',
+    marginBottom: 10,
+  },
+  loadText: {
+    color: 'green',
     marginBottom: 10,
   },
 });

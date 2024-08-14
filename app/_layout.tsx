@@ -32,7 +32,6 @@ export default function RootLayout() {
         <Stack.Screen name="index" />
         <Stack.Screen name="register/start" />
         <Stack.Screen name="register/profileSelection" />
-        <Stack.Screen name="register" />
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="orderDetail/index" />
         <Stack.Screen name="+not-found" />

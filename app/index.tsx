@@ -26,6 +26,10 @@ export default function LoginScreen() {
         await AsyncStorage.setItem('userEmail', userData.email);
         await AsyncStorage.setItem('phone', userData.phone);
         await AsyncStorage.setItem('userId', userData.id);
+        await AsyncStorage.setItem('userName', userData.name);
+        if (!!userData.pic) {
+          await AsyncStorage.setItem('userPic', userData.pic);
+        }
 
         if (!userData.kind) {
           userData.cadastrado = 'cadastrado'
@@ -41,7 +45,7 @@ export default function LoginScreen() {
         if (!userData.confirmed) {
           router.push({
             pathname: '/register/onBoard',
-            params: userData,
+            params: {kind: userData.kind},
           });
           return
         }

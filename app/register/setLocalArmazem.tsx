@@ -7,15 +7,17 @@ import { Snackbar } from 'react-native-paper';
 import { FontAwesome } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Logo from '@/assets/images/Logo.svg';
+import { setCep2 } from './set_field'
 
 export default function RegisterScreen() {
   const params = useLocalSearchParams();
+  const kind = params.kind;
   const [email, setEmail] = useState('');
   const [id, setId] = useState('');
   const [comunidade, setComunidade] = useState('');
   const [bairro, setBairro] = useState('');
   const [capacidade, setCapacidade] = useState('');
-  const cep_default = '00000-000'
+  const cep_default = ''
   const [cep, setCep] = useState(cep_default);
   const [logradouro, setLogradouro] = useState('');
   const [numero, setNumero] = useState('');
@@ -33,15 +35,25 @@ export default function RegisterScreen() {
         // Fetch user data
         const usersRef = collection(database, 'users');
         const newUserQuery = query(usersRef, where('__name__', '==', id));
-        const newUserSnapshot = await getDocs(newUserQuery);
-        const newUser = newUserSnapshot.docs[0].data();
-        setComunidade(newUser.armazem.comunidade)
-        setBairro(newUser.armazem.bairro)
-        setCapacidade(newUser.armazem.capacidade)
-        setCep(newUser.armazem.cep)
-        setLogradouro(newUser.armazem.logradouro)
-        setNumero(newUser.armazem.numero)
-        setComplemento(newUser.armazem.complemento)
+
+        try {
+          const newUserSnapshot = await getDocs(newUserQuery);
+          const newUser = newUserSnapshot.docs[0].data();
+          setComunidade(newUser.armazem.comunidade)
+          setBairro(newUser.armazem.bairro)
+          setCapacidade(newUser.armazem.capacidade)
+          setCep(newUser.armazem.cep)
+          setLogradouro(newUser.armazem.logradouro)
+          setNumero(newUser.armazem.numero)
+          setComplemento(newUser.armazem.complemento)
+        }
+        catch (e: unknown) {
+          if (e instanceof Error) {
+            alert('Erro ao carregar os dados: ' + e.message);
+          } else {
+            alert('Erro desconhecido ao carregar os dados');
+          }
+        }
       }
       setVisible(true)
     }
@@ -50,17 +62,6 @@ export default function RegisterScreen() {
 
   const numerical = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0']
 
-  async function setCep2(cep: string) {
-    const last = cep[cep.length - 1]
-    if (!numerical.includes(last) || cep.length > 14) {
-      cep = cep.substring(0, cep.length-1)
-    }
-    if (cep.length === 6) {
-      var diff = ['-']
-      cep = cep.substring(0, cep.length-1) + diff + [last]
-    }
-    setCep(cep)
-  }
 
   const router = useRouter();
 
@@ -83,19 +84,6 @@ export default function RegisterScreen() {
         }
       });
 
-      // Fetch the newly created user data
-      const usersRef = collection(database, 'users');
-      const newUserQuery = query(usersRef, where('email', '==', email));
-      const newUserSnapshot = await getDocs(newUserQuery);
-      await AsyncStorage.setItem('userEmail', email);
-
-      if (newUserSnapshot.empty) {
-        router.back()
-      }
-      
-      const newUser = newUserSnapshot.docs[0].data();
-      newUser._screen = 3
-      newUser.id = newUserSnapshot.docs[0].id
 
       if (!!params.update) {
         router.back()
@@ -103,7 +91,7 @@ export default function RegisterScreen() {
       else {
         router.push({
           pathname: '/register/onBoard',
-          params: newUser,
+          params: {kind: kind, _screen: 3},
         });
       }
 
@@ -161,7 +149,7 @@ export default function RegisterScreen() {
           placeholder="CEP"
           placeholderTextColor="#aaa"
           value={cep}
-          onChangeText={setCep2}
+          onChangeText={(s) => setCep2(s, setCep)}
         />}
       </View>
       <View style={styles.inputContainer}>
