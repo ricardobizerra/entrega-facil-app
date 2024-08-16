@@ -8,7 +8,7 @@ import {
   getDocs,
   Timestamp,
 } from "firebase/firestore";
-import { database } from "../config/firebaseConfig.js";
+import { database } from "../config/firebaseConfig-noreact.js";
 
 const pedidoRef = collection(database, "products");
 await addDoc(pedidoRef, {
