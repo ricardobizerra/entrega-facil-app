@@ -32,7 +32,7 @@ const CenteredModalContainer = styled(View)`
 const NotificationContainer = styled(View)`
   background-color: #ffffff;
   padding: 25px;
-  margin-bottom: 20px;
+  margin-bottom: 100px;
   border-radius: 20px;
   justify-content: center;
   align-items: center;
@@ -152,15 +152,15 @@ export default function HomeScreen() {
       <CenteredModalContainer>
         <NotificationContainer style={{width: Dimensions.get('window').width * 0.8, height: Dimensions.get('window').height * 0.7}}>
         <TouchableOpacity 
-          style={{ position: 'absolute', top: 60, right: 70 }} 
+          style={{ position: 'relative', top: 20, left: 100 }} 
           onPress={() => setNotificationSeen(true)}
         >
           <Exit />
         </TouchableOpacity>
           <Illustration />
-          <Text style={{ fontSize: 40, marginTop: 20, fontWeight: 900, textAlign: 'center' }}>Você tem novas{'\n'}solicitações de entrega</Text>
-          <ConfirmButton onPress={() => router.push('/history')}>
-            <ConfirmButtonText>Acessar pedidos</ConfirmButtonText>
+          <Text style={{ fontSize: 30, marginTop: 20, fontWeight: 900, textAlign: 'center' }}>Você tem novas{'\n'}solicitações de entrega</Text>
+          <ConfirmButton onPress={() => router.push('/history')} style={{marginBottom: 0}}>
+            <ConfirmButtonText style={{ fontSize: 25, fontWeight: 900, textAlign: 'center' }}>Acessar pedidos</ConfirmButtonText>
           </ConfirmButton>
         </NotificationContainer>
       </CenteredModalContainer>
