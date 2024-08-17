@@ -23,6 +23,7 @@ export default function LoginScreen() {
         userData.id = userId
 
         // Save the user email to AsyncStorage
+        await AsyncStorage.multiRemove(['userPic', 'kind'])
         await AsyncStorage.setItem('userEmail', userData.email);
         await AsyncStorage.setItem('phone', userData.phone);
         await AsyncStorage.setItem('userId', userData.id);
