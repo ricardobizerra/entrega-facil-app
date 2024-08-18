@@ -15,6 +15,7 @@ import OrderIconStorage from '@/assets/images/orderIconStorage.svg';
 import Wave from '@/assets/images/wave.svg';
 import WaveStorage from '@/assets/images/wave-storage.svg';
 import { Header } from 'react-native/Libraries/NewAppScreen';
+import { FontAwesome } from '@expo/vector-icons';
 
 const CodeContainer = styled(View)`
   flex-direction: row;
@@ -155,6 +156,93 @@ const TabsContainer = styled(View)`
   margin-top: 20px;
 `;
 
+const PopupButton = styled(TouchableOpacity)`
+  background-color: #4CAF50;
+  padding: 10px;
+  border-radius: 8px;
+  margin-top: 20px;
+  align-items: center;
+`;
+
+const NotificationOption = styled(TouchableOpacity)`
+  flex-direction: row;
+  align-items: center;
+  padding: 15px;
+  background-color: #f0f0f0;
+  border-radius: 10px;
+  margin-bottom: 10px;
+  width: 100%;
+`;
+
+const PopupContainer = styled(View)`
+  flex: 1;
+  justify-content: center;
+  align-items: center;
+  background-color: rgba(0, 0, 0, 0.5);
+`;
+
+const PopupContent = styled(View)`
+  width: 80%;
+  padding: 20px;
+  background-color: white;
+  border-radius: 10px;
+  align-items: center;
+`;
+const OptionText = styled(Text)`
+  font-size: 16px;
+  margin-left: 10px;
+`;
+
+const IncidentFormContainer = styled(View)`
+  width: 100%;
+  padding: 20px;
+  background-color: white;
+  border-radius: 10px;
+  align-items: center;
+`;
+
+const IncidentFormInput = styled(TextInput)`
+  height: 100px;
+  border-width: 1px;
+  border-color: #cccccc;
+  border-radius: 8px;
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 10px;
+`;
+
+const IncidentFormButton = styled(TouchableOpacity)`
+  background-color: #FF5733;
+  padding: 10px;
+  border-radius: 8px;
+  align-items: center;
+  width: 100%;
+`;
+
+const IncidentFormButtonText = styled(Text)`
+  color: white;
+  font-size: 16px;
+  font-weight: bold;
+`;
+
+const PopupCloseButton = styled(TouchableOpacity)`
+  margin-top: 20px;
+  padding: 10px 20px;
+  background-color: #FF5733;
+  border-radius: 8px;
+`;
+
+const PopupCloseButtonText = styled(Text)`
+  color: white;
+  font-size: 16px;
+`;
+
+const OrderDetailItem = styled(View)`
+  padding: 21px;
+  flex-direction: row;
+  align-items: center;
+`;
+
 interface TabTextProps {
   selected: boolean;
   kind: string | null;
@@ -287,6 +375,22 @@ export interface PackageHistoryItem {
   storage_code: string;
   stored: boolean;
 }
+interface PackageOrderDetailItem {
+  id: string;
+  status: string;
+  client_id: string;
+  creation_date: Timestamp;
+  arrival_date: Timestamp;
+  delivery_actions: { [key: string]: { action: string; timestamp: Timestamp } };
+  address: string;
+  icon: string;
+  order_name: string;
+  weight: 'light' | 'medium';
+  sensitive: boolean;
+  client_name: string;
+  location: { latitude: number; longitude: number };
+}
+
 
 export default function History() {
   const router = useRouter();
@@ -301,6 +405,10 @@ export default function History() {
   const [enteredCode, setEnteredCode] = useState('');
   const codeInputRef = useRef<TextInput>(null);
   const [userKind, setUserKind] = useState<string | null>(null);
+  const [packageOrderDetail, setPackageOrderDetail] = useState<PackageOrderDetailItem[]>([]);
+  const [isPopupVisible, setIsPopupVisible] = useState(false);
+  const [isIncidentFormVisible, setIsIncidentFormVisible] = useState(false);
+  const [incidentDescription, setIncidentDescription] = useState('');
 
   useEffect(() => {
     if (userKind === 'armazenador') {
@@ -806,6 +914,111 @@ export default function History() {
                   >
                       {getRelativeDate(getLastAction(item.delivery_actions).timestamp.toDate())}
                   </HistoryText>
+                  <ActionContainer
+                    style={{
+                      position: 'relative',
+                    }}
+                  >
+                    <PopupButton
+                      style={{
+                        position: 'absolute',
+                        bottom: 120,
+                        right: 10, 
+                        zIndex: 1, 
+                        backgroundColor: 'transparent', 
+                        borderWidth: 0,
+                      }}
+                      onPress={() => setIsPopupVisible(true)}
+                    >
+                      <FontAwesome name="exclamation-circle" size={24} color="#3A3A3A" />
+                    </PopupButton>
+                  </ActionContainer>
+                  <Modal visible={isPopupVisible} transparent={true} animationType="fade">
+            <PopupContainer>
+              <PopupContent>
+                <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 10 }}>
+                  Relatar Problema
+                </Text>
+                <TouchableOpacity 
+                  style={{
+                    position: 'absolute',
+                    top: 10,
+                    right: 10,
+                    zIndex: 1,
+                  }}
+                  onPress={() => setIsPopupVisible(false)}
+                >
+                  <FontAwesome name="times" size={24} color="#3A3A3A" />
+                </TouchableOpacity>
+                <NotificationOption onPress={() => setIsIncidentFormVisible(true)}>
+                  <FontAwesome name="clock-o" size={24} color="#3A3A3A" />
+                  <OptionText>Atraso no Trânsito</OptionText>
+                </NotificationOption>
+
+                <NotificationOption onPress={() => setIsIncidentFormVisible(true)}>
+                  <FontAwesome name="user-times" size={24} color="#3A3A3A" />
+                  <OptionText>Responsável não encontrado no local de entrega</OptionText>
+                </NotificationOption>
+
+                <NotificationOption onPress={() => setIsIncidentFormVisible(true)}>
+                  <FontAwesome name="map-marker" size={24} color="#3A3A3A" />
+                  <OptionText>Endereço incorreto</OptionText>
+                </NotificationOption>
+
+                <NotificationOption onPress={() => setIsIncidentFormVisible(true)}>
+                  <FontAwesome name="umbrella" size={24} color="#3A3A3A" />
+                  <OptionText>Pedido sofreu acidente no percurso</OptionText>
+                </NotificationOption>
+
+                <NotificationOption onPress={() => setIsIncidentFormVisible(true)}>
+                  <FontAwesome name="exclamation-triangle" size={24} color="#3A3A3A" />
+                  <OptionText>Entregador sofreu acidente no percurso</OptionText>
+                </NotificationOption>
+
+                <NotificationOption onPress={() => setIsIncidentFormVisible(true)}>
+                  <FontAwesome name="times-circle" size={24} color="#3A3A3A" />
+                  <OptionText>Outro</OptionText>
+                </NotificationOption>
+              </PopupContent>
+            </PopupContainer>
+          </Modal>
+
+          <Modal visible={isIncidentFormVisible} transparent={true} animationType="fade">
+            <PopupContainer>
+              <IncidentFormContainer>
+                <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 10 }}>
+                  Nos conte mais sobre o imprevisto
+                </Text>
+
+                <Text style={{ fontSize: 14, color: '#666', marginBottom: 10 }}>
+                  Nos informe se algo tiver ocorrido ao longo dessa entrega.
+                </Text>
+
+                <IncidentFormInput
+                  multiline
+                  maxLength={500}
+                  placeholder="Descreva o imprevisto aqui..."
+                  value={incidentDescription}
+                  onChangeText={setIncidentDescription}
+                />
+
+                <Text style={{ alignSelf: 'flex-end', marginBottom: 10 }}>
+                  {incidentDescription.length}/500 caracteres
+                </Text>
+
+                <IncidentFormButton onPress={() => { /* Adicionar lógica para enviar o formulário */ }}>
+                  <IncidentFormButtonText>Enviar</IncidentFormButtonText>
+                </IncidentFormButton>
+
+                <PopupCloseButton onPress={() => setIsIncidentFormVisible(false)}>
+                  <PopupCloseButtonText>Fechar</PopupCloseButtonText>
+                </PopupCloseButton>
+              </IncidentFormContainer>
+            </PopupContainer>
+          </Modal>
+
+
+
                 </ActionContainer>
                 {selectedTab === 'Pendentes' && (
                   <AcceptButton onPress={() => acceptOrder(item.id)} kind={userKind}>
