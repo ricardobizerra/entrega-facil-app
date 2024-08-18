@@ -321,6 +321,20 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ client_id, product_id, closeM
           <Back width={24} height={24} />
         </TouchableOpacity>
       </BackButtonContainer>
+      <ActionContainer
+              style={{
+                position: 'absolute',
+                top: 24,
+                left: 5,
+                zIndex: 1, // Garante que o botão fique acima de outros elementos
+                margin: 10, // Ajusta o espaço do botão em relação às bordas da tela
+              }}
+            >
+              <PopupButton onPress={() => setIsPopupVisible(true)}>
+              <FontAwesome name="exclamation-circle" size={24} color="#3A3A3A" />
+              
+              </PopupButton>
+            </ActionContainer>
 
       {packageOrderDetail.map((order, index) => (
         <OrderDetailItem key={order.id}>
@@ -370,9 +384,18 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ client_id, product_id, closeM
               />
             </MapContainer>
 
-            <ActionContainer>
+            <ActionContainer
+              style={{
+                position: 'absolute',
+                top: 24,
+                left: 5,
+                zIndex: 1, // Garante que o botão fique acima de outros elementos
+                margin: 10, // Ajusta o espaço do botão em relação às bordas da tela
+              }}
+            >
               <PopupButton onPress={() => setIsPopupVisible(true)}>
-                <PopupButtonText>Notificar Problema</PopupButtonText>
+              <FontAwesome name="exclamation-circle" size={24} color="#3A3A3A" />
+              
               </PopupButton>
             </ActionContainer>
           </View>
@@ -388,7 +411,7 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ client_id, product_id, closeM
                     position: 'absolute',
                     top: 10,
                     right: 10,
-                    zIndex: 1
+                    zIndex: 1,
                   }}
                   onPress={() => setIsPopupVisible(false)}
                 >
