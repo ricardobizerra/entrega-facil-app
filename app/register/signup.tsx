@@ -10,6 +10,8 @@ import Logo from '@/assets/images/Logo.svg';
 import { setCpf2, setPhone2 } from './set_field'
 import { ImageInput } from '@/components/form/image/BaseImageInput';
 import { uploadImageAsync } from '@/utils/upload-image-firebase';
+import { SectionTitle } from '@/components/SectionTitle';
+import { NextButton } from '@/components/form/NextButton';
 
 export default function RegisterScreen() {
   const params = useLocalSearchParams()
@@ -94,8 +96,10 @@ export default function RegisterScreen() {
     let rgUrlVerso: string | undefined = undefined;
 
     try {
-      rgUrlFrente = await uploadImageAsync(fotoRgFrente!);
-      rgUrlVerso = await uploadImageAsync(fotoRgVerso!);
+      [rgUrlFrente, rgUrlVerso] = await Promise.all([
+        uploadImageAsync(fotoRgFrente!),
+        uploadImageAsync(fotoRgVerso!)
+      ]);
     } catch (e: unknown) {
       if (e instanceof Error) {
         alert('Erro ao armazenar foto do RG: ' + e.message);
@@ -134,10 +138,22 @@ export default function RegisterScreen() {
         if (!!newUser.pic) {
           await AsyncStorage.setItem('userPic', newUser.pic);
         }
-        router.push({
-          pathname: '/register/onBoard',
-          params: newUser,
-        });
+        if (String(newUser.kind).includes('entregador')) {
+          router.push({
+            pathname: '/register/setDadosEntregador',
+            params: {kind:kind, _screen: 2},
+          });
+        } else if (String(newUser.kind).includes('armazenador')) {
+          router.push({
+            pathname: '/register/setLocalArmazem',
+            params: { kind: kind, _screen: 2 },
+          });
+        } else {
+          router.push({
+            pathname: '/register/onBoard',
+            params: newUser,
+          });
+        }
       }
 
       setVisible(true);
@@ -152,102 +168,99 @@ export default function RegisterScreen() {
   }
 
   return (
-    <ScrollView>
-    <View style={styles.container}>
-      <Logo/>
-      <Text style={styles.subtitle}>Cadastro</Text>
-      <View style={styles.inputContainer}>
-        <FontAwesome name="user" size={24} color="black" />
-        <TextInput
-          style={styles.input}
-          placeholder="Nome"
-          placeholderTextColor="#aaa"
-          value={name}
-          onChangeText={setName}
+    <ScrollView contentContainerStyle={styles.container}>
+      <View style={styles.subContainer}>
+        <View>
+          <SectionTitle title="Dados cadastrais" style={{ marginBottom: 32 }} />
+
+          <View style={styles.inputContainer}>
+            <FontAwesome name="user" size={24} color="black" />
+            <TextInput
+              style={styles.input}
+              placeholder="Nome"
+              placeholderTextColor="#aaa"
+              value={name}
+              onChangeText={setName}
+            />
+          </View>
+          <View style={styles.inputContainer} onTouchStart={() => {
+            if (cpf === '000.000.000-00') {
+              setCpf('')
+            }
+          }}>
+            <FontAwesome name="info" size={14} color="black" />
+            <TextInput
+              style={styles.input}
+              placeholder="Cpf"
+              placeholderTextColor="#aaa"
+              value={cpf}
+              onChangeText={(s) => setCpf2(s, setCpf)}
+            />
+          </View>
+          <View style={styles.inputContainer}>
+            <FontAwesome name="phone" size={13} color="black" />
+            <TextInput
+              style={styles.input}
+              placeholder="Telefone"
+              placeholderTextColor="#aaa"
+              value={phone}
+              onChangeText={(s) => setPhone2(s, setPhone)}
+            />
+          </View>
+          <View style={styles.inputContainer}>
+            <FontAwesome name="envelope" size={24} color="black" />
+            <TextInput
+              style={styles.input}
+              placeholder="Email"
+              placeholderTextColor="#aaa"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+            />
+          </View>
+          <View style={styles.inputContainer}>
+            <FontAwesome name="lock" size={24} color="black" />
+            <TextInput
+              style={styles.input}
+              placeholder="Senha"
+              placeholderTextColor="#aaa"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry={true}
+            />
+          </View>
+          <View style={styles.inputContainer}>
+            <FontAwesome name="lock" size={24} color="black" />
+            <TextInput
+              style={styles.input}
+              placeholder="Confirmar Senha"
+              placeholderTextColor="#aaa"
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              secureTextEntry={true}
+            />
+          </View>
+          <ImageInput
+            value={fotoRgFrente}
+            onChange={setRgFrente}
+            placeholder="Foto do RG (frente)"
+            modalTitle="Envie uma foto da frente do seu RG/CIN"
+            modalDescription="Nossa equipe verificará sua identidade para validar seu cadastro em nosso time de colaboradores"
+          />
+          <ImageInput
+            value={fotoRgVerso}
+            onChange={setRgVerso}
+            placeholder="Foto do RG (verso)"
+            modalTitle="Envie uma foto do verso do seu RG/CIN"
+            modalDescription="Nossa equipe verificará sua identidade para validar seu cadastro em nosso time de colaboradores"
+          />
+          {!load && error ? <Text style={styles.errorText}>{error}</Text> : null}
+          {load ? <Text style={styles.loadText}>{load}</Text> : null}
+        </View>
+        <NextButton
+          onPress={handleRegister}
+          text="Próximo"
         />
-      </View>
-      <View style={styles.inputContainer} onTouchStart={() => {
-        if (cpf === '000.000.000-00') {
-          setCpf('')
-        }
-      }}>
-        <FontAwesome name="info" size={14} color="black" />
-        <TextInput
-          style={styles.input}
-          placeholder="Cpf"
-          placeholderTextColor="#aaa"
-          value={cpf}
-          onChangeText={(s) => setCpf2(s, setCpf)}
-        />
-      </View>
-      <View style={styles.inputContainer}>
-        <FontAwesome name="phone" size={13} color="black" />
-        <TextInput
-          style={styles.input}
-          placeholder="Telefone"
-          placeholderTextColor="#aaa"
-          value={phone}
-          onChangeText={(s) => setPhone2(s, setPhone)}
-        />
-      </View>
-      <View style={styles.inputContainer}>
-        <FontAwesome name="envelope" size={24} color="black" />
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          placeholderTextColor="#aaa"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-        />
-      </View>
-      <View style={styles.inputContainer}>
-        <FontAwesome name="lock" size={24} color="black" />
-        <TextInput
-          style={styles.input}
-          placeholder="Senha"
-          placeholderTextColor="#aaa"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry={true}
-        />
-      </View>
-      <View style={styles.inputContainer}>
-        <FontAwesome name="lock" size={24} color="black" />
-        <TextInput
-          style={styles.input}
-          placeholder="Confirmar Senha"
-          placeholderTextColor="#aaa"
-          value={confirmPassword}
-          onChangeText={setConfirmPassword}
-          secureTextEntry={true}
-        />
-      </View>
-      <ImageInput
-        value={fotoRgFrente}
-        onChange={setRgFrente}
-        placeholder="Foto do RG (frente)"
-        modalTitle="Envie uma foto da frente do seu RG/CIN"
-        modalDescription="Nossa equipe verificará sua identidade para validar seu cadastro em nosso time de colaboradores"
-      />
-      <ImageInput
-        value={fotoRgVerso}
-        onChange={setRgVerso}
-        placeholder="Foto do RG (verso)"
-        modalTitle="Envie uma foto do verso do seu RG/CIN"
-        modalDescription="Nossa equipe verificará sua identidade para validar seu cadastro em nosso time de colaboradores"
-      />
-      {!load && error ? <Text style={styles.errorText}>{error}</Text> : null}
-      {load ? <Text style={styles.loadText}>{load}</Text> : null}
-      <TouchableOpacity style={styles.button} onPress={handleRegister}>
-        <Text style={styles.buttonText}>Cadastrar</Text>
-      </TouchableOpacity>
-      <Text style={styles.loginText}>
-        Já possui uma conta?{' '}
-        <Text style={styles.loginLink} onPress={() => router.push('/')}>
-          Faça login
-        </Text>
-      </Text>
       </View>
     </ScrollView>
   );
@@ -256,10 +269,15 @@ export default function RegisterScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
+    paddingHorizontal: 32,
+    paddingVertical: 64,
     backgroundColor: '#f5f5f5',
+  },
+  subContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'space-between',    
+    width: '100%',
   },
   logo: {
     width: 210, 
@@ -287,7 +305,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     paddingHorizontal: 8,
     backgroundColor: '#fff',
-    width: '80%',
+    width: '100%',
     height: 40,
   },
   input: {
@@ -301,7 +319,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     borderRadius: 5,
     marginVertical: 10,
-    width: '80%',
+    width: '100%',
     alignItems: 'center',
   },
   buttonText: {
