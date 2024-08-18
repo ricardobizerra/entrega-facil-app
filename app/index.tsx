@@ -6,6 +6,7 @@ import { useRouter } from 'expo-router';
 import { FontAwesome } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Logo from '@/assets/images/logo/LogoLogin.svg';
+import { NextButton } from '@/components/form/NextButton';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -73,41 +74,48 @@ export default function LoginScreen() {
 
   return (
     <View style={styles.container}>
-      <Logo/>
-      <Text style={styles.title}>Ei! Tá Entregue!</Text>
-      <Text style={styles.subtitle}>Faça a diferença na sua comunidade</Text>
-      <View style={styles.inputContainer}>
-        <FontAwesome name="envelope" size={24} color="black" />
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          placeholderTextColor="#aaa"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
+      <View style={styles.section}>
+        <Logo style={styles.logo} />
+        <Text style={styles.title}>Ei! Tá Entregue!</Text>
+        <Text style={styles.subtitle}>Faça a diferença na sua comunidade</Text>
+      </View>
+      <View style={styles.section}>
+        <View style={styles.inputContainer}>
+          <FontAwesome name="envelope" size={24} color="black" />
+          <TextInput
+            style={styles.input}
+            placeholder="Email"
+            placeholderTextColor="#aaa"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
+        </View>
+        <View style={styles.inputContainer}>
+          <FontAwesome name="lock" size={24} color="black" />
+          <TextInput
+            style={styles.input}
+            placeholder="Senha"
+            placeholderTextColor="#aaa"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+          />
+        </View>
+        <NextButton
+          onPress={handleLogin}
+          text="Login"
         />
       </View>
-      <View style={styles.inputContainer}>
-        <FontAwesome name="lock" size={24} color="black" />
-        <TextInput
-          style={styles.input}
-          placeholder="Senha"
-          placeholderTextColor="#aaa"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-        />
-      </View>
-      <TouchableOpacity style={styles.button} onPress={handleLogin}>
-        <Text style={styles.buttonText}>Login</Text>
-      </TouchableOpacity>
-      <Text style={styles.registerText}>
-        Não possui conta?{' '}
-        <Text style={styles.registerLink} onPress={() => router.push('/register/start')}>
-          Faça seu cadastro
+      <View style={styles.section}>
+        <Text style={styles.registerText}>
+          Não possui conta?{' '}
+          <Text style={styles.registerLink} onPress={() => router.push('/register/start')}>
+            Faça seu cadastro
+          </Text>
         </Text>
-      </Text>
+      </View>
     </View>
   );
 }
@@ -115,27 +123,29 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
-    justifyContent: 'center',
+    paddingHorizontal: 32,
+    paddingVertical: 64,
+    justifyContent: 'space-between',
     alignItems: 'center',
     backgroundColor: '#f5f5f5',
   },
+  section: {
+    alignItems: 'center',
+    width: '100%',
+  },
   logo: {
-    width: 210, 
-    height: 270, 
-    marginBottom: 30, 
+    marginBottom: 32, 
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#000',
-    marginTop: 20,
   },
   subtitle: {
     fontSize: 14,
     fontWeight: 'regular',
     color: '#000',
-    marginBottom: 20,
+    marginTop: 8,
     textAlign: 'center',
   },
   inputContainer: {
@@ -147,7 +157,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     paddingHorizontal: 8,
     backgroundColor: '#fff',
-    width: '80%',
+    width: '100%',
     height: 40,
   },
   input: {

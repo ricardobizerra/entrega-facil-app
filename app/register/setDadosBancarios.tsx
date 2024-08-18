@@ -8,6 +8,8 @@ import { FontAwesome } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Logo from '@/assets/images/Logo.svg';
 import { setCpf2 } from './set_field'
+import { SectionTitle } from '@/components/SectionTitle';
+import { NextButton } from '@/components/form/NextButton';
 
 export default function RegisterScreen() {
   const params = useLocalSearchParams()
@@ -79,59 +81,62 @@ export default function RegisterScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.subtitle}>Dados Bancários</Text>
-      <View style={styles.inputContainer}>
-        <FontAwesome size={24} color="black" />
-        {visible && <TextInput
-          style={styles.input}
-          placeholder="Banco"
-          placeholderTextColor="#aaa"
-          value={banco}
-          onChangeText={setBanco}
-        />}
+      <View>
+        <SectionTitle title="Dados bancários" style={{ marginBottom: 32 }} />
+
+        <View style={styles.inputContainer}>
+          <FontAwesome size={24} color="black" />
+          {visible && <TextInput
+            style={styles.input}
+            placeholder="Banco"
+            placeholderTextColor="#aaa"
+            value={banco}
+            onChangeText={setBanco}
+          />}
+        </View>
+        <View style={styles.inputContainer}>
+          <FontAwesome size={13} color="black" />
+          {visible && <TextInput
+            style={styles.input}
+            placeholder="Agência"
+            placeholderTextColor="#aaa"
+            value={agencia}
+            onChangeText={setAgencia}
+          />}
+        </View>
+        <View style={styles.inputContainer}>
+          {visible && <TextInput
+            style={styles.input}
+            placeholder="Número da conta"
+            placeholderTextColor="#aaa"
+            value={n_conta}
+            onChangeText={setNConta}
+          />}
+        </View>
+        <View style={styles.inputContainer}>
+          {visible && <TextInput
+            style={styles.input}
+            placeholder="Titular da conta"
+            placeholderTextColor="#aaa"
+            value={titular_conta}
+            onChangeText={setTitular}
+          />}
+        </View>
+        <View style={styles.inputContainer}>
+          {visible && <TextInput
+            style={styles.input}
+            placeholder="CPF do titular"
+            placeholderTextColor="#aaa"
+            value={cpf_titular}
+            onChangeText={(s) => setCpf2(s, setCpfTitular)}
+          />}
+        </View>
+        {error ? <Text style={styles.errorText}>{error}</Text> : null}
       </View>
-      <View style={styles.inputContainer}>
-        <FontAwesome size={13} color="black" />
-        {visible && <TextInput
-          style={styles.input}
-          placeholder="Agência"
-          placeholderTextColor="#aaa"
-          value={agencia}
-          onChangeText={setAgencia}
-        />}
-      </View>
-      <View style={styles.inputContainer}>
-        {visible && <TextInput
-          style={styles.input}
-          placeholder="Número da conta"
-          placeholderTextColor="#aaa"
-          value={n_conta}
-          onChangeText={setNConta}
-        />}
-      </View>
-      <View style={styles.inputContainer}>
-        {visible && <TextInput
-          style={styles.input}
-          placeholder="Titular da conta"
-          placeholderTextColor="#aaa"
-          value={titular_conta}
-          onChangeText={setTitular}
-        />}
-      </View>
-      <View style={styles.inputContainer}>
-        {visible && <TextInput
-          style={styles.input}
-          placeholder="CPF do titular"
-          placeholderTextColor="#aaa"
-          value={cpf_titular}
-          onChangeText={(s) => setCpf2(s, setCpfTitular)}
-        />}
-      </View>
-      {error ? <Text style={styles.errorText}>{error}</Text> : null}
-      <TouchableOpacity style={styles.button} onPress={handleRegister}>
-        {!params.update && <Text style={styles.buttonText}>Cadastrar</Text>}
-        {!!params.update && <Text style={styles.buttonText}>Atualizar</Text>}
-      </TouchableOpacity>
+      <NextButton
+        onPress={handleRegister}
+        text={!params.update ? "Cadastrar" : "Atualizar"}
+      />
     </View>
   );
 }
@@ -139,8 +144,9 @@ export default function RegisterScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
-    justifyContent: 'center',
+    paddingHorizontal: 32,
+    paddingVertical: 64,
+    justifyContent: 'space-between',
     alignItems: 'center',
     backgroundColor: '#f5f5f5',
   },
@@ -176,7 +182,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     paddingHorizontal: 8,
     backgroundColor: '#fff',
-    width: '80%',
+    width: '100%',
     height: 40,
   },
   input: {
