@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Text, View, Image, TouchableOpacity, Dimensions, TextInput } from 'react-native';
 import { database } from '@/config/firebaseConfig';
 import { collection, getDocs, query, where, Timestamp } from 'firebase/firestore';
 import styled from 'styled-components/native';
+import { Modal, TextInput, Text, View, Image, TouchableOpacity, Dimensions } from 'react-native';
 import { format, isToday, isTomorrow, isYesterday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import Logo from '@/assets/images/logo-no-text.svg';
@@ -31,6 +31,7 @@ const LabelText = styled(Text)`
 const ValueText = styled(Text)`
   flex: 1;
 `;
+
 
 const OrderDetailContainer = styled(View)`
   display: flex;
@@ -66,7 +67,7 @@ export const getStatusColor = (status: string): string => {
 };
 
 const StyledImage = styled(Image).attrs({
-  resizeMode: 'cover',
+  resizeMode: 'cover', // This ensures the image won't stretch and keeps its aspect ratio
   width: Dimensions.get('window').width * 0.9
 })`
   height: 200px;
@@ -90,8 +91,8 @@ const LogoImage = styled(Logo)`
 
 const OrderDetailItem = styled(View)`
   padding: 21px;
-  flex-direction: row;
-  align-items: center;
+  flex-direction: row; /* Ensure items are aligned horizontally */
+  align-items: center; /* Center items vertically */
 `;
 
 const ActionDot = styled(View)`
@@ -102,7 +103,7 @@ const ActionDot = styled(View)`
 `;
 
 const ActionTextContainer = styled(View)`
-  margin-left: 10px;
+  margin-left: 10px; /* Adjust as needed */
 `;
 
 const OrderTitleText = styled(Text)`
@@ -245,7 +246,7 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ client_id, product_id, closeM
       const newEntries = querySnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
-        delivery_actions: doc.data().delivery_actions || {}
+        delivery_actions: doc.data().delivery_actions || {} // Default to empty object if delivery_actions doesn't exist
       })) as PackageOrderDetailItem[];
       setPackageOrderDetail(newEntries.filter(entry => entry.id === product_id));
     } catch (error) {
@@ -300,17 +301,15 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ client_id, product_id, closeM
 
   const getRelativeDate = (date: Date) => {
     const now = new Date();
-
+  
     if (isToday(date)) {
       return format(date, "'hoje às' HH:mm", { locale: ptBR });
     } else if (isTomorrow(date)) {
       return format(date, "'amanhã às' HH:mm", { locale: ptBR });
     } else if (isYesterday(date)) {
       return format(date, "'ontem às' HH:mm", { locale: ptBR });
-    } else if (date.getFullYear() === now.getFullYear()) {
-      return format(date, "dd 'de' MMMM", { locale: ptBR });
     } else {
-      return format(date, "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
+      return format(date, "'em' dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
     }
   };
 
@@ -318,63 +317,84 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ client_id, product_id, closeM
     <OrderDetailContainer>
       <BackButtonContainer>
         <TouchableOpacity onPress={handleBack}>
-          <Back width={24} height={24} />
+          <Back />
         </TouchableOpacity>
       </BackButtonContainer>
 
       {packageOrderDetail.map((order, index) => (
-        <OrderDetailItem key={order.id}>
-          <View>
-            <OrderDetailIcon>
-              <StyledImage source={{ uri: order.icon }} />
+        <View key={order.id}>
+          <OrderDetailIcon>
+            <View>
+              <OrderTitleText>Pedido {order.order_name}</OrderTitleText>
+              <ActionContainer>
+                  <ActionDot
+                    style={{
+                      backgroundColor: getStatusColor(order.status.toLowerCase()),
+                    }}
+                  />
+                  <OrderDetailText> {order.status === 'received'
+                      ? `Finalizado`
+                      : `Em andamento`
+                  } </OrderDetailText>
+
+                  <OrderDetailText>
+                    {order.status === 'received'
+                        ? `Finalizado ${getRelativeDate(order.arrival_date.toDate())}`
+                        : `Iniciado ${getRelativeDate(order.creation_date.toDate())}`
+                    }                   
+                  </OrderDetailText>
+              </ActionContainer>
+              <OrderTitleText>Dados do pedido</OrderTitleText>
+              <StyledImage source={{ uri: order.icon }} style={{marginBottom: 20}} />
+
               <OrderDetailText>
-                {order.order_name}{"\n"}{order.client_name}
+                  {getWeightText(order.weight)}                </OrderDetailText>
+              <OrderDetailText>
+                  Objeto sensível? {order.sensitive ? 'Sim' : 'Não'}
               </OrderDetailText>
-            </OrderDetailIcon>
+              <View style={{marginTop: 10}}>
+              <HorizontalContainer>
+                <LabelText
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                >
+                    {order.status === 'received'
+                      ? `Pedido entregue`
+                      : `Prazo de entrega`
+                    }
+                  </LabelText>
+                  <ValueText
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                  >
+                      {getRelativeDate(order.arrival_date.toDate())}
+                  </ValueText>
+                  </HorizontalContainer>
+                  <HorizontalContainer>
+                <LabelText>Entregar para</LabelText>
+                <ValueText>{order.client_name}</ValueText>
+              </HorizontalContainer>
+              </View>              
+              <OrderDetailText style={{ fontWeight: 'bold', marginTop: 20 }}>Endereço de entrega</OrderDetailText>
+                <OrderDetailText>{order.address}</OrderDetailText>
+                <MapContainer
+                  initialRegion={{
+                    latitude: order.location.latitude,
+                    longitude: order.location.longitude,
+                    latitudeDelta: 0.0922,
+                    longitudeDelta: 0.0421,
+                  }}
+                >
+                  <Marker
+                    coordinate={{ latitude: order.location.latitude, longitude: order.location.longitude }}
+                  />
+                </MapContainer>
 
-            <OrderDetailIcon>
-              <LabelText>Endereço:</LabelText>
-              <ValueText>{order.address}</ValueText>
-            </OrderDetailIcon>
-
-            <OrderDetailIcon>
-              <LabelText>Peso:</LabelText>
-              <ValueText>{getWeightText(order.weight)}</ValueText>
-            </OrderDetailIcon>
-
-            <OrderDetailIcon>
-              <LabelText>Última Ação:</LabelText>
-              <ValueText>{getLastAction(order.delivery_actions).action}</ValueText>
-            </OrderDetailIcon>
-
-            <OrderDetailIcon>
-              <LabelText>Data:</LabelText>
-              <ValueText>{getRelativeDate(order.arrival_date.toDate())}</ValueText>
-            </OrderDetailIcon>
-
-            <MapContainer
-              initialRegion={{
-                latitude: order.location.latitude,
-                longitude: order.location.longitude,
-                latitudeDelta: 0.05,
-                longitudeDelta: 0.05,
-              }}
-            >
-              <Marker
-                coordinate={{
-                  latitude: order.location.latitude,
-                  longitude: order.location.longitude,
-                }}
-                title="Localização da Entrega"
-                description={order.address}
-              />
-            </MapContainer>
-
-            <ActionContainer>
+                <ActionContainer>
               <PopupButton onPress={() => setIsPopupVisible(true)}>
-                <PopupButtonText>Notificar Problema</PopupButtonText>
-              </PopupButton>
-            </ActionContainer>
+                  <PopupButtonText>Notificar Problema</PopupButtonText>
+                </PopupButton>
+              </ActionContainer>
           </View>
 
           <Modal visible={isPopupVisible} transparent={true} animationType="fade">
@@ -460,10 +480,12 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ client_id, product_id, closeM
               </IncidentFormContainer>
             </PopupContainer>
           </Modal>
-        </OrderDetailItem>
+
+          </OrderDetailIcon>
+        </View>
       ))}
     </OrderDetailContainer>
   );
-};
+}
 
 export default OrderDetail;
