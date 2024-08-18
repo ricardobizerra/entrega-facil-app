@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, TextInput, StyleSheet, TouchableOpacity, Text, Alert, Image } from 'react-native';
+import { View, TextInput, StyleSheet, TouchableOpacity, Text, Alert, Image, ScrollView } from 'react-native';
 import { getDocs, query, collection, where } from 'firebase/firestore';
 import { database } from '@/config/firebaseConfig';
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
@@ -99,7 +99,7 @@ export default function Perfil() {
   }
 
   return (
-    <View style={styles.container}>
+    <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.pagetitle}>Seu Perfil</Text>
       <PerfilData/>
       <TouchableOpacity style={styles.button} onPress={handleUpdate}>
@@ -114,7 +114,7 @@ export default function Perfil() {
         <FontAwesomeIcon icon={faRightFromBracket} size={20}/>
         <Text style={styles.buttonText}>Logout</Text>
       </TouchableOpacity>
-    </View>
+    </ScrollView>
   );
 }
 
@@ -142,6 +142,8 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: 'bold',
     color: '#000',
+    wordWrap: 'breakWord',
+    width: 160,
   },
   pagetitle: {
     fontSize: 34,
@@ -153,9 +155,11 @@ const styles = StyleSheet.create({
     color: '#888'
   },
   subtitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'regular',
     color: '#000',
+    wordWrap: 'breakWord',
+    width: 140,
   },
   inputContainer: {
     flexDirection: 'row',
