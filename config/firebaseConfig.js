@@ -9,8 +9,8 @@ import {
   updateDoc,
   serverTimestamp,
 } from "firebase/firestore";
-import { getAuth, browserLocalPersistence } from "firebase/auth";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { initializeAuth, getReactNativePersistence } from "firebase/auth";
+import ReactNativeAsyncStorage from "@react-native-async-storage/async-storage";
 
 // Configuração do Firebase
 const firebaseConfig = {
@@ -30,7 +30,8 @@ const firebaseApp = initializeApp(firebaseConfig);
 export const database = getFirestore(firebaseApp);
 
 // Inicializa o Auth
-const auth = getAuth(firebaseApp);
-auth.setPersistence(browserLocalPersistence);
+const auth = initializeAuth(firebaseApp, {
+  persistence: getReactNativePersistence(ReactNativeAsyncStorage),
+});
 
 export { addDoc, collection, doc, getDoc, updateDoc, serverTimestamp };

@@ -251,7 +251,7 @@ const UserName = styled(Text)`
 
 const WaveContainer = styled(View)`
   align-items: flex-end;
-  margin-top: 12;
+  margin-top: 12px;
 `;
 
 const Container = styled(View)`
@@ -308,7 +308,7 @@ const ActionsSection = styled(View)`
 const Alltext = styled(View)`
   margin: 17px;
   text-align: left;
-  margin-left: 40;
+  margin-left: 40px;
   flex: 1;
 `;
 
