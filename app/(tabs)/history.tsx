@@ -19,7 +19,7 @@ const ActionDetails = styled(View)`
 
 const WaveContainer = styled(View)`
   align-items: flex-end;
-  margin-top: 20;
+  margin-top: 20px;
 `;
 
 const HeaderContainer = styled(View)`
@@ -34,8 +34,8 @@ const HeaderText = styled(Text)`
   font-size: 20px;
   font-weight: 700;
   text-align: left;
-  margin-left: 40;
-  margin-top: 10;
+  margin-left: 40px;
+  margin-top: 10px;
   flex: 1;
 `;
 
