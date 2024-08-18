@@ -342,6 +342,15 @@ const ConfirmButtonText = styled(Text)`
   text-align: center;
 `;
 
+const RedirectOptionContainer = styled(View)`
+display: inline-flex;
+padding: 20px 10px;
+align-items: center;
+gap: 10px;
+border-radius: 20px;
+background: #FFF;
+
+`;
 export const getStatusColor = (status: string): string => {
   switch (status) {
     case 'processing':
@@ -409,7 +418,7 @@ export default function History() {
   const [isPopupVisible, setIsPopupVisible] = useState(false);
   const [isIncidentFormVisible, setIsIncidentFormVisible] = useState(false);
   const [incidentDescription, setIncidentDescription] = useState('');
-
+  const [isRedirectOptionVisible, setIsRedirectOptionVisible] = useState(false);
   useEffect(() => {
     if (userKind === 'armazenador') {
       setSelectedTab('Em andamento');
@@ -1006,7 +1015,7 @@ export default function History() {
                   {incidentDescription.length}/500 caracteres
                 </Text>
 
-                <IncidentFormButton onPress={() => { /* Adicionar lógica para enviar o formulário */ }}>
+                <IncidentFormButton onPress={() => {setIsRedirectOptionVisible(true)}}>
                   <IncidentFormButtonText>Enviar</IncidentFormButtonText>
                 </IncidentFormButton>
 
@@ -1014,6 +1023,22 @@ export default function History() {
                   <PopupCloseButtonText>Fechar</PopupCloseButtonText>
                 </PopupCloseButton>
               </IncidentFormContainer>
+            </PopupContainer>
+          </Modal>
+          
+          <Modal visible={isRedirectOptionVisible} transparent={true} animationType="fade">
+            <PopupContainer>
+              <RedirectOptionContainer>
+              <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 10 }}>
+                  Deseja Cancelar essa entrega?
+                </Text>
+                <Text style={{ fontSize: 14, color: '#666', marginBottom: 10 }}>
+                  Passaremos para outro entregador a entrega do pedido.
+                </Text>
+              </RedirectOptionContainer>
+              <PopupCloseButton onPress={() => setIsRedirectOptionVisible(false)}>
+                  <PopupCloseButtonText>Continuar com a entrega</PopupCloseButtonText>
+                </PopupCloseButton>
             </PopupContainer>
           </Modal>
 
