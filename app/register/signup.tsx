@@ -130,6 +130,7 @@ export default function RegisterScreen() {
         const newUser = newUserSnapshot.docs[0].data();
         const id = newUserSnapshot.docs[0].id;
         newUser.id = id
+        await AsyncStorage.multiRemove(['userPic'])
         await AsyncStorage.setItem('phone', newUser.phone);
         await AsyncStorage.setItem('userId', newUser.id);
         await AsyncStorage.setItem('kind', newUser.kind);
