@@ -12,7 +12,7 @@ import { FontAwesome } from '@expo/vector-icons';
 
 const MapContainer = styled(MapView)`
   width: 100%;
-  height: 300px;
+  height: 200px;
   margin-top: 20px;
   border-radius: 25px;
   overflow: hidden;
