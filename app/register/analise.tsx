@@ -38,10 +38,10 @@ export default function LoginScreen() {
   return (
     <View style={styles.container}>
       <Logo/>
-      <Text style={styles.title}>Nossa equipe analisará seu cadastro</Text>
+      <Text style={styles.title}>Nossa equipe analisará seu cadastro!</Text>
       <Text style={styles.subtitle}>Você receberá o resultado de sua análise em seu email cadastrado em até 1 dia útil</Text>
       <TouchableOpacity style={styles.button} onPress={handleLogin}>
-        <Text style={styles.buttonText}>Ir para o Login</Text>
+        <Text style={styles.buttonText}>Ir para o login</Text>
       </TouchableOpacity>
     </View>
   );
@@ -65,6 +65,8 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#000',
     marginTop: 20,
+    textAlign: 'center',
+    marginBottom: 10,
   },
   subtitle: {
     fontSize: 14,

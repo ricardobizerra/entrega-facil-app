@@ -36,6 +36,10 @@ export async function setCep2(cep: string, func: (arg0: string) => void) {
       enter_cep = enter_cep.substring(0, 9)
       break
     }
+    else if (cep.length > 9) {
+      enter_cep = cep.substring(0, 9)
+      break
+    }
     else if (enter_cep.length === 5) {
       var diff = ['-']
       enter_cep = enter_cep + diff + [char]

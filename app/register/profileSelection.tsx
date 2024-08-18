@@ -6,8 +6,10 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 
 import { updateDoc, collection, query, where, getDocs, doc } from 'firebase/firestore';
 import { database } from '@/config/firebaseConfig';
+import { SectionTitle } from '@/components/SectionTitle';
+import { NextButton } from '@/components/form/NextButton';
 
-type ProfileEnum = 'entregador' | 'armazenador' | 'entregador,armazenador';
+type ProfileEnum = 'entregador' | 'armazenador';
 
 export default function ProfileSelection() {
   const router = useRouter();
@@ -27,79 +29,51 @@ export default function ProfileSelection() {
   }
 
   return (
-    <>
     <View style={styles.container}>
-      <View style={styles.titleContainer}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <ArrowLeft />
-        </TouchableOpacity>
-        <Text style={styles.title}>
-          Perfil de colaboração
-        </Text>
-      </View>
+      <View style={styles.titleAndSelectionContainer}>
+        <SectionTitle title="Perfil de colaboração" />
 
-      <View style={styles.selectionContainer}>
-        <TouchableOpacity
-          style={[styles.selection, selection === 'entregador' && styles.selectionActive]}
-          onPress={() => handleSelection('entregador')}
-        >
-          <Image source={require('@/assets/images/register/DeliveryPerson.png')} style={styles.selectionImage} />
-          <View style={styles.selectionText}>
-            <Text style={styles.selectionTitle}>
-              Quero ser{" "}
-              <Text style={styles.selectionTitleBold}>
-                entregador
+        <View style={styles.selectionContainer}>
+          <TouchableOpacity
+            style={[styles.selection, selection === 'entregador' && styles.selectionActive]}
+            onPress={() => handleSelection('entregador')}
+          >
+            <Image source={require('@/assets/images/register/DeliveryPerson.png')} style={styles.selectionImage} />
+            <View style={styles.selectionText}>
+              <Text style={styles.selectionTitle}>
+                Quero ser{" "}
+                <Text style={styles.selectionTitleBold}>
+                  entregador
+                </Text>
               </Text>
-            </Text>
-            <Text style={styles.selectionDescription}>
-              Entregue encomendas para sua comunidade
-            </Text>
-          </View>
-        </TouchableOpacity>
+              <Text style={styles.selectionDescription}>
+                Entregue encomendas para sua comunidade
+              </Text>
+            </View>
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[styles.selection, selection === 'armazenador' && styles.selectionActive]}
-          onPress={() => handleSelection('armazenador')}
-        >
-          <Image source={require('@/assets/images/register/HolderPerson.png')} style={styles.selectionImage} />
-          <View style={styles.selectionText}>
-            <Text style={styles.selectionTitle}>
-              Quero ser{" "}
-              <Text style={styles.selectionTitleBold}>
-                armazenador
+          <TouchableOpacity
+            style={[styles.selection, selection === 'armazenador' && styles.selectionActive]}
+            onPress={() => handleSelection('armazenador')}
+          >
+            <Image source={require('@/assets/images/register/HolderPerson.png')} style={styles.selectionImage} />
+            <View style={styles.selectionText}>
+              <Text style={styles.selectionTitle}>
+                Quero ser{" "}
+                <Text style={styles.selectionTitleBold}>
+                  armazenador
+                </Text>
               </Text>
-            </Text>
-            <Text style={styles.selectionDescription}>
-              Armazene encomendas de sua comunidade em um espaço de sua residência
-            </Text>
-          </View>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.selection, selection === 'entregador,armazenador' && styles.selectionActive]}
-          onPress={() => handleSelection('entregador,armazenador')}
-        >
-          <Image source={require('@/assets/images/register/DeliveryHolderPerson.png')} style={styles.selectionImage} />
-          <View style={styles.selectionText}>
-            <Text style={styles.selectionTitle}>
-              Quero ser{" "}
-              <Text style={styles.selectionTitleBold}>
-                entregador
+              <Text style={styles.selectionDescription}>
+                Armazene encomendas de sua comunidade em um espaço de sua residência
               </Text>
-              {" e "}
-              <Text style={styles.selectionTitleBold}>
-                armazenador
-              </Text>
-            </Text>
-            <Text style={styles.selectionDescription}>
-              Atue nas duas modalidades do Tá Entregue
-            </Text>
-          </View>
-        </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <View>
-        <TouchableOpacity
+        <NextButton
           onPress={() => {
             if (!selection) return;
             if (params.cadastrado) {
@@ -112,16 +86,11 @@ export default function ProfileSelection() {
                 params: params
               });
             }}
-          style={[styles.nextButton, !selection && styles.nextButtonDisabled]}
           disabled={!selection}
-        >
-          <Text style={styles.nextButtonText}>
-            {!selection ? 'Selecione um perfil' : 'Próximo'}
-          </Text>
-        </TouchableOpacity>
+          text={!selection ? 'Selecione um perfil' : 'Próximo'}
+        />
       </View>
     </View>
-    </>
   )
 }
 
@@ -130,26 +99,14 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 32,
     paddingVertical: 64,
-    justifyContent: 'center',
+    justifyContent: 'space-between',    
     backgroundColor: '#f5f5f5',
-  },
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    gap: 8,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-    textAlign: 'center',
-    color: '#000',
   },
   selectionContainer: {
     display: 'flex',
     flexDirection: 'column',
     justifyContent: 'center',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: 16,
     marginVertical: 16,
   },
@@ -210,5 +167,9 @@ const styles = StyleSheet.create({
     color: '#000',
     fontSize: 16,
     fontWeight: '700',
+  },
+  titleAndSelectionContainer: {
+    flex: 1,
+    gap: 32,
   },
 });

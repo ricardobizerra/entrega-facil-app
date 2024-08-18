@@ -9,12 +9,15 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Logo from '@/assets/images/Logo.svg';
 import { uploadImageAsync } from '@/utils/upload-image-firebase';
 import { ImageInput } from '@/components/form/image/BaseImageInput';
+import { SectionTitle } from '@/components/SectionTitle';
+import { NextButton } from '@/components/form/NextButton';
 
 export default function RegisterScreen() {
   const params = useLocalSearchParams();
   const kind = params.kind
   const [email, setEmail] = useState('');
   const [id, setId] = useState('');
+  const [comunidade, setComunidade] = useState('');
   const [veiculo, setVeiculo] = useState('');
   const [modelo, setModelo] = useState('');
   const [placa, setPlaca] = useState('');
@@ -35,6 +38,7 @@ export default function RegisterScreen() {
           const newUserQuery = query(usersRef, where('__name__', '==', id));
           const newUserSnapshot = await getDocs(newUserQuery);
           const newUser = newUserSnapshot.docs[0].data();
+          setComunidade(newUser.endereço.comunidade)
           setVeiculo(newUser.entregador.veiculo)
           setModelo(newUser.entregador.modelo)
           setPlaca(newUser.entregador.placa)
@@ -48,7 +52,7 @@ export default function RegisterScreen() {
   const router = useRouter();
 
   async function handleRegister() {
-    if (!veiculo || !modelo || (veiculo.toLowerCase() !== 'bicicleta' && !placa)) {
+    if (!comunidade ||  !veiculo || !modelo || (veiculo.toLowerCase() !== 'bicicleta' && !placa)) {
       setError('Por favor, preencha todos os campos\nVeículos que não são bicicleta requerem placa e foto da cnh');
       return;
     }
@@ -79,6 +83,7 @@ export default function RegisterScreen() {
       if (!!cnhUrl) {
         await updateDoc(doc(database, "users", id), {
           entregador: {
+            comunidade,
             veiculo,
             modelo,
             placa,
@@ -89,6 +94,7 @@ export default function RegisterScreen() {
       else {
         await updateDoc(doc(database, "users", id), {
           entregador: {
+            comunidade,
             veiculo,
             modelo,
             placa,
@@ -98,8 +104,8 @@ export default function RegisterScreen() {
 
       if (!params.update) {
         router.push({
-          pathname: '/register/onBoard',
-          params: {kind: kind, _screen: 2},
+          pathname: '/register/setDadosBancarios',
+          params: {  kind: kind, _screen: 2 },
         });
       }
       else {
@@ -116,49 +122,60 @@ export default function RegisterScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.subtitle}>Informações de entrega</Text>
-      <Text style={styles.subsubtitle}>Informações do entregador</Text>
-      <View style={styles.inputContainer}>
-        <FontAwesome name="bicycle" size={24} color="black" />
+      <View>
+        <SectionTitle title="Dados do entregador" style={{ marginBottom: 32 }} />
+        <View style={styles.inputContainer}>
+        <FontAwesome name="users" size={24} color="black" />
         {visible && <TextInput
           style={styles.input}
-          placeholder="Tipo de veículo"
+          placeholder="Comunidade de Atuação"
           placeholderTextColor="#aaa"
-          value={veiculo}
-          onChangeText={setVeiculo}
+          value={comunidade}
+          onChangeText={setComunidade}
         />}
       </View>
-      <View style={styles.inputContainer}>
-        <FontAwesome name="modx" size={13} color="black" />
-        {visible && <TextInput
-          style={styles.input}
-          placeholder="Modelo do veículo"
-          placeholderTextColor="#aaa"
-          value={modelo}
-          onChangeText={setModelo}
+        <View style={styles.inputContainer}>
+          <FontAwesome name="bicycle" size={24} color="black" />
+          {visible && <TextInput
+            style={styles.input}
+            placeholder="Tipo de veículo"
+            placeholderTextColor="#aaa"
+            value={veiculo}
+            onChangeText={setVeiculo}
+          />}
+        </View>
+        <View style={styles.inputContainer}>
+          <FontAwesome name="modx" size={13} color="black" />
+          {visible && <TextInput
+            style={styles.input}
+            placeholder="Modelo do veículo"
+            placeholderTextColor="#aaa"
+            value={modelo}
+            onChangeText={setModelo}
+          />}
+        </View>
+        <View style={styles.inputContainer}>
+          {visible && <TextInput
+            style={styles.input}
+            placeholder="Placa do veículo"
+            placeholderTextColor="#aaa"
+            value={placa}
+            onChangeText={setPlaca}
+          />}
+        </View>
+        {!params.update && <ImageInput
+          value={fotoCnh}
+          onChange={setCnh}
+          placeholder="Foto da CNH"
+          modalTitle="Envie uma foto da frente de sua CNH"
+          modalDescription="Nossa equipe verificará sua habilitação para validar seu cadastro em nosso time de colaboradores"
         />}
+        {error ? <Text style={styles.errorText}>{error}</Text> : null}
       </View>
-      <View style={styles.inputContainer}>
-        {visible && <TextInput
-          style={styles.input}
-          placeholder="Placa do veículo"
-          placeholderTextColor="#aaa"
-          value={placa}
-          onChangeText={setPlaca}
-        />}
-      </View>
-      {!params.update && <ImageInput
-        value={fotoCnh}
-        onChange={setCnh}
-        placeholder="Foto da CNH"
-        modalTitle="Envie uma foto da frente de sua CNH"
-        modalDescription="Nossa equipe verificará sua habilitação para validar seu cadastro em nosso time de colaboradores"
-      />}
-      {error ? <Text style={styles.errorText}>{error}</Text> : null}
-      <TouchableOpacity style={styles.button} onPress={handleRegister}>
-        {!params.update && <Text style={styles.buttonText}>Avançar</Text>}
-        {!!params.update && <Text style={styles.buttonText}>Atualizar</Text>}
-      </TouchableOpacity>
+      <NextButton
+        onPress={handleRegister}
+        text={!params.update ? "Próximo" : "Atualizar"}
+      />
     </View>
   );
 }
@@ -166,8 +183,9 @@ export default function RegisterScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
-    justifyContent: 'center',
+    paddingHorizontal: 32,
+    paddingVertical: 64,
+    justifyContent: 'space-between',
     alignItems: 'center',
     backgroundColor: '#f5f5f5',
   },
@@ -203,7 +221,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     paddingHorizontal: 8,
     backgroundColor: '#fff',
-    width: '80%',
+    width: '100%',
     height: 40,
   },
   input: {

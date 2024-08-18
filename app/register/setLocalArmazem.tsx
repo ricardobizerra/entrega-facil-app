@@ -8,6 +8,8 @@ import { FontAwesome } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Logo from '@/assets/images/Logo.svg';
 import { setCep2 } from './set_field'
+import { SectionTitle } from '@/components/SectionTitle';
+import { NextButton } from '@/components/form/NextButton';
 
 export default function RegisterScreen() {
   const params = useLocalSearchParams();
@@ -40,8 +42,8 @@ export default function RegisterScreen() {
           const newUserSnapshot = await getDocs(newUserQuery);
           const newUser = newUserSnapshot.docs[0].data();
           setComunidade(newUser.armazem.comunidade)
-          setBairro(newUser.armazem.bairro)
-          setCapacidade(newUser.armazem.capacidade)
+          // setBairro(newUser.armazem.bairro)
+          // setCapacidade(newUser.armazem.capacidade)
           setCep(newUser.armazem.cep)
           setLogradouro(newUser.armazem.logradouro)
           setNumero(newUser.armazem.numero)
@@ -66,7 +68,7 @@ export default function RegisterScreen() {
   const router = useRouter();
 
   async function handleRegister() {
-    if (!comunidade || !bairro || !cep || !logradouro || !numero || cep===cep_default || cep.length != 9) {
+    if (!comunidade /*|| !bairro*/ || !cep || !logradouro || !numero || cep===cep_default || cep.length != 9) {
       setError('Por favor, preencha todos os campos');
       return;
     }
@@ -75,8 +77,8 @@ export default function RegisterScreen() {
       await updateDoc(doc(database, "users", id), {
         armazem: {
           comunidade,
-          bairro,
-          capacidade,
+          // bairro,
+          // capacidade,
           cep,
           logradouro,
           numero,
@@ -90,8 +92,8 @@ export default function RegisterScreen() {
       }
       else {
         router.push({
-          pathname: '/register/onBoard',
-          params: {kind: kind, _screen: 3},
+          pathname: '/register/setDadosBancarios',
+          params: {  kind: kind, _screen: 3 },
         });
       }
 
@@ -107,84 +109,88 @@ export default function RegisterScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.subtitle}>Endereço do armazém</Text>
-      <View style={styles.inputContainer}>
-        <FontAwesome name="users" size={24} color="black" />
-        {visible && <TextInput
-          style={styles.input}
-          placeholder="Comunidade de Atuação"
-          placeholderTextColor="#aaa"
-          value={comunidade}
-          onChangeText={setComunidade}
-        />}
+      <View>
+        <SectionTitle title="Dados do armazenador" style={{ marginBottom: 32 }} />
+        <View style={styles.inputContainer}>
+          <FontAwesome name="users" size={24} color="black" />
+          {visible && <TextInput
+            style={styles.input}
+            placeholder="Comunidade de Atuação"
+            placeholderTextColor="#aaa"
+            value={comunidade}
+            onChangeText={setComunidade}
+          />}
+        </View>
+        {/* <View style={styles.inputContainer}>
+          <FontAwesome name="users" size={24} color="black" />
+          {visible && <TextInput
+            style={styles.input}
+            placeholder="Bairro"
+            placeholderTextColor="#aaa"
+            value={bairro}
+            onChangeText={setBairro}
+          />}
+        </View>
+        <View style={styles.inputContainer}>
+          <FontAwesome name="users" size={24} color="black" />
+          {visible && <TextInput
+            style={styles.input}
+            placeholder="Capacidade"
+            placeholderTextColor="#aaa"
+            value={capacidade}
+            onChangeText={setCapacidade}
+          />}
+        </View> */}
+        <View style={styles.inputContainer} onTouchStart={() => {
+            if (cep === cep_default && !params.update) {
+              setCep('')
+            }
+          }}>
+          <FontAwesome name="info" size={14} color="black" />
+          {visible && <TextInput
+            style={styles.input}
+            placeholder="CEP"
+            placeholderTextColor="#aaa"
+            value={cep}
+            onChangeText={(s) => setCep2(s, setCep)}
+          />}
+        </View>
+        <View style={styles.inputContainer}>
+          <FontAwesome name="address-book" size={13} color="black" />
+          {visible && <TextInput
+            style={styles.input}
+            placeholder="Logradouro"
+            placeholderTextColor="#aaa"
+            value={logradouro}
+            onChangeText={setLogradouro}
+          />}
+        </View>
+        <View style={styles.twoInput}>
+          <View style={styles.twoInputContainer}>
+            {visible && <TextInput
+              style={styles.input}
+              placeholder="Número"
+              placeholderTextColor="#aaa"
+              value={numero}
+              onChangeText={setNumero}
+            />}
+          </View>
+          <View style={styles.twoInputContainer}>
+            {visible && <TextInput
+              style={styles.input}
+              placeholder="Complemento"
+              placeholderTextColor="#aaa"
+              value={complemento}
+              onChangeText={setComplemento}
+            />}
+          </View>
+        </View>
+        {error ? <Text style={styles.errorText}>{error}</Text> : null}
       </View>
-      <View style={styles.inputContainer}>
-        <FontAwesome name="users" size={24} color="black" />
-        {visible && <TextInput
-          style={styles.input}
-          placeholder="Bairro"
-          placeholderTextColor="#aaa"
-          value={bairro}
-          onChangeText={setBairro}
-        />}
-      </View>
-      <View style={styles.inputContainer}>
-        <FontAwesome name="users" size={24} color="black" />
-        {visible && <TextInput
-          style={styles.input}
-          placeholder="Capacidade"
-          placeholderTextColor="#aaa"
-          value={capacidade}
-          onChangeText={setCapacidade}
-        />}
-      </View>
-      <View style={styles.inputContainer} onTouchStart={() => {
-          if (cep === cep_default && !params.update) {
-            setCep('')
-          }
-        }}>
-        <FontAwesome name="info" size={14} color="black" />
-        {visible && <TextInput
-          style={styles.input}
-          placeholder="CEP"
-          placeholderTextColor="#aaa"
-          value={cep}
-          onChangeText={(s) => setCep2(s, setCep)}
-        />}
-      </View>
-      <View style={styles.inputContainer}>
-        <FontAwesome name="address-book" size={13} color="black" />
-        {visible && <TextInput
-          style={styles.input}
-          placeholder="Logradouro"
-          placeholderTextColor="#aaa"
-          value={logradouro}
-          onChangeText={setLogradouro}
-        />}
-      </View>
-      <View style={styles.inputContainer}>
-        {visible && <TextInput
-          style={styles.input}
-          placeholder="Numero"
-          placeholderTextColor="#aaa"
-          value={numero}
-          onChangeText={setNumero}
-        />}
-      </View>
-      <View style={styles.inputContainer}>
-        {visible && <TextInput
-          style={styles.input}
-          placeholder="Complemento"
-          placeholderTextColor="#aaa"
-          value={complemento}
-          onChangeText={setComplemento}
-        />}
-      </View>
-      {error ? <Text style={styles.errorText}>{error}</Text> : null}
-      <TouchableOpacity style={styles.button} onPress={handleRegister}>
-        {!params.update && <Text style={styles.buttonText}>Avançar</Text>}
-        {!!params.update && <Text style={styles.buttonText}>Atualizar</Text>}
-      </TouchableOpacity>
+      <NextButton
+        onPress={handleRegister}
+        text={!params.update ? "Próximo" : "Atualizar"}
+      />
     </View>
   );
 }
@@ -192,8 +198,9 @@ export default function RegisterScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
-    justifyContent: 'center',
+    paddingHorizontal: 32,
+    paddingVertical: 64,
+    justifyContent: 'space-between',
     alignItems: 'center',
     backgroundColor: '#f5f5f5',
   },
@@ -223,8 +230,23 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     paddingHorizontal: 8,
     backgroundColor: '#fff',
-    width: '80%',
+    width: '100%',
     height: 40,
+  },
+  twoInput: {
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  twoInputContainer: {
+    borderColor: '#ccc',
+    borderWidth: 1,
+    borderRadius: 5,
+    marginBottom: 12,
+    paddingHorizontal: 8,
+    backgroundColor: '#fff',
+    height: 40,
+    width: '49%',
   },
   input: {
     flex: 1,
@@ -237,7 +259,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     borderRadius: 5,
     marginVertical: 10,
-    width: '80%',
+    width: '100%',
     alignItems: 'center',
   },
   buttonText: {
