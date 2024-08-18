@@ -1029,16 +1029,21 @@ export default function History() {
           <Modal visible={isRedirectOptionVisible} transparent={true} animationType="fade">
             <PopupContainer>
               <RedirectOptionContainer>
-              <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 10 }}>
+                <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 10 }}>
                   Deseja Cancelar essa entrega?
                 </Text>
-                <Text style={{ fontSize: 14, color: '#666', marginBottom: 10 }}>
-                  Passaremos para outro entregador a entrega do pedido.
-                </Text>
-              </RedirectOptionContainer>
-              <PopupCloseButton onPress={() => setIsRedirectOptionVisible(false)}>
-                  <PopupCloseButtonText>Continuar com a entrega</PopupCloseButtonText>
-                </PopupCloseButton>
+      <Text style={{ fontSize: 14, color: '#3A3A3A', fontStyle: 'normal', fontWeight: 700}}>
+        Passaremos para outro entregador a entrega do pedido.
+      </Text>
+      <PopupCloseButton onPress={() => setIsRedirectOptionVisible(false)}>
+        <PopupCloseButtonText style = {{borderRadius: 50}}>Continuar com a entrega</PopupCloseButtonText>
+      </PopupCloseButton>
+        <PopupCloseButton onPress={() => setIsRedirectOptionVisible(false)}
+         style={{ backgroundColor: '#fff', borderRadius: 50 }}
+         >
+        <PopupCloseButtonText style={{ color: '#DB3319' }}>Cancelar entrega</PopupCloseButtonText>
+        </PopupCloseButton>
+    </RedirectOptionContainer>
             </PopupContainer>
           </Modal>
 
