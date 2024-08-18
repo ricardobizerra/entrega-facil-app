@@ -151,7 +151,7 @@ export default function RegisterScreen() {
           params: { update: 'true' }
         })
       }}>
-        <Text style={styles.buttonText2}>&lt; Informações de entregador</Text>
+        <Text style={styles.buttonText2}>Informações de entregador</Text>
       </TouchableOpacity>}
       {(kind == 'armazenador' || kind == 'entregador,armazenador') && <TouchableOpacity style={styles.button2} onPress={() => {
         router.push({
@@ -159,7 +159,7 @@ export default function RegisterScreen() {
           params: { update: 'true' }
         })
       }}>
-        <Text style={styles.buttonText2}>&lt; Informações de armazém</Text>
+        <Text style={styles.buttonText2}>Informações de armazém</Text>
       </TouchableOpacity>}
       <TouchableOpacity style={styles.button2} onPress={() => {
         router.push({
@@ -167,7 +167,7 @@ export default function RegisterScreen() {
           params: {update: 'true'}
         })
       }}>
-        <Text style={styles.buttonText2}>&lt; Informações de pagamento</Text>
+        <Text style={styles.buttonText2}>Informações de pagamento</Text>
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.button2} onPress={() => {
@@ -176,7 +176,7 @@ export default function RegisterScreen() {
           params: {update: 'update'}
         })
       }}>
-        <Text style={styles.buttonText2}>&lt; Alterar senha</Text>
+        <Text style={styles.buttonText2}>Alterar senha</Text>
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.button} onPress={handleUpdate}>
@@ -258,7 +258,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     borderRadius: 5,
     marginVertical: 10,
-    width: '80%',
+    width: '87%',
     alignItems: 'center',
   },
   buttonText: {
@@ -266,14 +266,13 @@ const styles = StyleSheet.create({
     fontSize: 18,
   },
   button2: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#000',
-    borderWidth: 2,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 5,
+    backgroundColor: '#E3E3E3',
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    borderWidth: 0,
+    borderRadius: 100,
     marginVertical: 10,
-    width: '80%'
+    width: '82%',
   },
   buttonText2: {
     textAlign: 'left',
