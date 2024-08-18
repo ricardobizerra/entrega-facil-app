@@ -14,11 +14,10 @@ import { NextButton } from '@/components/form/NextButton';
 export default function RegisterScreen() {
   const params = useLocalSearchParams()
   const [id, setId] = useState('')
-  const [banco, setBanco] = useState('');
-  const [agencia, setAgencia] = useState('');
-  const [n_conta, setNConta] = useState('');
-  const [titular_conta, setTitular] = useState('');
-  const [cpf_titular, setCpfTitular] = useState('');
+  const [senha_atual, SetSenhaAtual] = useState('')
+  const [confirmar_senha_atual, SetConfirmarSenhaAtual] = useState('')
+  const [nova_senha, SetSenha] = useState('')
+  const [confirmar_senha, SetConfirmarSenha] = useState('')
   const [editable, setVisible] = useState(false);
   const [error, setError] = useState('');
 
@@ -34,11 +33,11 @@ export default function RegisterScreen() {
         const newUserQuery = query(usersRef, where('__name__', '==', id));
         const newUserSnapshot = await getDocs(newUserQuery);
         const newUser = newUserSnapshot.docs[0].data();
-        setBanco(newUser.dados_bancarios.banco)
-        setNConta(newUser.dados_bancarios.n_conta)
-        setAgencia(newUser.dados_bancarios.agencia)
-        setTitular(newUser.dados_bancarios.titular_conta)
-        setCpf2(newUser.dados_bancarios.cpf_titular, setCpfTitular)
+        SetSenhaAtual(newUser.password)
+      }
+      else {
+        console.error("Método não suportado de editar senha")
+        setError("Método não suportado de editar senha")
       }
       setVisible(true);
     }
@@ -46,33 +45,42 @@ export default function RegisterScreen() {
   }, []);
 
   async function handleRegister() {
-    if (!banco || !agencia || !n_conta || !titular_conta || !cpf_titular) {
-      setError('Por favor, preencha todos os campos');
+    let my_error = ''
+    if (!senha_atual || !nova_senha || !confirmar_senha || !confirmar_senha_atual) {
+      my_error += '\n' + 'Por favor, preencha todos os campos';
+    }
+
+    if (nova_senha !== confirmar_senha) {
+      my_error += '\n' + 'As senhas não coincidem';
+    }
+
+    if (confirmar_senha_atual !== senha_atual) {
+      my_error += '\n' + 'Senha incorreta';
+    }
+
+    if (my_error !== '') {
+      console.log(my_error)
+      setError(my_error)
       return;
     }
 
     try {
       await updateDoc(doc(database, "users", id), {
-        dados_bancarios: {
-          banco,
-          agencia,
-          n_conta,
-          titular_conta,
-          cpf_titular
-        }
+        password: nova_senha
       });
 
       if (!!params.update) {
         router.back()
       }
       else {
-        router.push({ pathname: '/register/analise' })
+        console.error("Método não suportado de editar senha")
+      setError("Método não suportado de editar senha")
       }
 
       setVisible(true);
     } catch (e: unknown) {
       if (e instanceof Error) {
-        alert('Erro ao adicionar usuário: ' + e.message);
+        alert('Erro ao atualizar senha: ' + e.message);
       } else {
         alert('Erro desconhecido ao adicionar usuário');
       }
@@ -82,65 +90,48 @@ export default function RegisterScreen() {
   return (
     <View style={styles.container}>
       <View>
-        <SectionTitle title="Dados bancários" style={{ marginBottom: 32 }} />
-
+        <SectionTitle title="Alterar senha" style={{ marginBottom: 32 }} />
         <View style={styles.inputContainer}>
-          <FontAwesome size={24} color="black" />
-          {<TextInput
-            style={styles.input}
-            placeholder="Banco"
-            placeholderTextColor="#aaa"
-            value={banco}
-            onChangeText={setBanco}
-            editable={editable}
-          />}
+          <FontAwesome name="lock" size={24} color="black" />
+            <TextInput
+              style={styles.input}
+              placeholder="Senha atual"
+              placeholderTextColor="#aaa"
+              value={confirmar_senha_atual}
+              onChangeText={SetConfirmarSenhaAtual}
+              secureTextEntry={true}
+              editable={editable}
+            />
         </View>
         <View style={styles.inputContainer}>
-          <FontAwesome size={13} color="black" />
-          {<TextInput
-            style={styles.input}
-            placeholder="Agência"
-            placeholderTextColor="#aaa"
-            value={agencia}
-            onChangeText={setAgencia}
-            editable={editable}
-          />}
+          <FontAwesome name="lock" size={24} color="black" />
+            <TextInput
+              style={styles.input}
+              placeholder="Nova senha"
+              placeholderTextColor="#aaa"
+              value={nova_senha}
+              onChangeText={SetSenha}
+              secureTextEntry={true}
+              editable={editable}
+            />
         </View>
         <View style={styles.inputContainer}>
-          {<TextInput
-            style={styles.input}
-            placeholder="Número da conta"
-            placeholderTextColor="#aaa"
-            value={n_conta}
-            onChangeText={setNConta}
-            editable={editable}
-          />}
-        </View>
-        <View style={styles.inputContainer}>
-          {<TextInput
-            style={styles.input}
-            placeholder="Titular da conta"
-            placeholderTextColor="#aaa"
-            value={titular_conta}
-            onChangeText={setTitular}
-            editable={editable}
-          />}
-        </View>
-        <View style={styles.inputContainer}>
-          {<TextInput
-            style={styles.input}
-            placeholder="CPF do titular"
-            placeholderTextColor="#aaa"
-            value={cpf_titular}
-            onChangeText={(s) => setCpf2(s, setCpfTitular)}
-            editable={editable}
-          />}
+          <FontAwesome name="lock" size={24} color="black" />
+            <TextInput
+              style={styles.input}
+              placeholder="Confirmar nova senha"
+              placeholderTextColor="#aaa"
+              value={confirmar_senha}
+              onChangeText={SetConfirmarSenha}
+              secureTextEntry={true}
+              editable={editable}
+            />
         </View>
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
       </View>
       <NextButton
         onPress={handleRegister}
-        text={!params.update ? "Cadastrar" : "Atualizar"}
+        text={!params.update ? "N/A" : "Atualizar"}
       />
     </View>
   );
