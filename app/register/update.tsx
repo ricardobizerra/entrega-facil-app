@@ -170,6 +170,15 @@ export default function RegisterScreen() {
         <Text style={styles.buttonText2}>&lt; Informações de pagamento</Text>
       </TouchableOpacity>
 
+      <TouchableOpacity style={styles.button2} onPress={() => {
+        router.push({
+          pathname: '/register/alterarSenha',
+          params: {update: 'update'}
+        })
+      }}>
+        <Text style={styles.buttonText2}>&lt; Alterar senha</Text>
+      </TouchableOpacity>
+
       <TouchableOpacity style={styles.button} onPress={handleUpdate}>
         <Text style={styles.buttonText}>Atualizar</Text>
       </TouchableOpacity>

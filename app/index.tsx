@@ -29,6 +29,7 @@ export default function LoginScreen() {
         await AsyncStorage.setItem('phone', userData.phone);
         await AsyncStorage.setItem('userId', userData.id);
         await AsyncStorage.setItem('userName', userData.name);
+        await AsyncStorage.setItem('userCpf', userData.cpf);
         if (!!userData.pic) {
           await AsyncStorage.setItem('userPic', userData.pic);
         }

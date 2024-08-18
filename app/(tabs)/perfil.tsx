@@ -15,6 +15,7 @@ export default function Perfil() {
   const [id, setId] = useState('');
   const [phone, setPhone] = useState('')
   const [name, setName] = useState('')
+  const [cpf, setCpf]= useState('')
 
   useFocusEffect(() => {
     async function fetchData() { 
@@ -23,6 +24,7 @@ export default function Perfil() {
       setEmail(String(await AsyncStorage.getItem('userEmail')))
       setName(String(await AsyncStorage.getItem('userName')))
       setPhone(String(await AsyncStorage.getItem('phone')))
+      setCpf(String(await AsyncStorage.getItem('userCpf')))
       let pic = await AsyncStorage.getItem('userPic')
       if (!!pic) {
         setPic(String(pic))
@@ -55,15 +57,22 @@ export default function Perfil() {
     router.dismissAll()
   }
 
-  // TODO: exibir uma imagem default e adicionar a possibilidade de selecionar uma imagem de perfil
-  // armazenar o link dessa imagem no user e no async storage
+  async function handleSuporte() {
+    // TODO: redirecionar
+  }
+
   return (
     <View style={styles.container}>
       <Image style={styles.circle} resizeMode='cover' src={profile_pic_url} />
       <Text style={styles.title}>{name}</Text>
-      <Text style={styles.subtitle}>{email}</Text>
+      <Text style={styles.subtitle}>Email: {email}</Text>
+      <Text style={styles.subtitle}>CPF: {cpf}</Text>
+      <Text style={styles.subtitle}>Telefone: {phone}</Text>
       <TouchableOpacity style={styles.button} onPress={handleUpdate}>
         <Text style={styles.buttonText}>Atualizar dados</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.button} onPress={handleSuporte}>
+        <Text style={styles.buttonText}>Suporte</Text>
       </TouchableOpacity>
       <TouchableOpacity style={styles.button} onPress={handleLogout}>
         <Text style={styles.buttonText}>Logout</Text>
@@ -102,7 +111,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'regular',
     color: '#000',
-    marginBottom: 20,
     textAlign: 'center',
   },
   inputContainer: {
