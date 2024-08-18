@@ -145,14 +145,6 @@ export default function RegisterScreen() {
       </View>
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
       
-      {(kind == 'entregador' || kind=='entregador,armazenador') &&<TouchableOpacity style={styles.button2} onPress={() => {
-        router.push({
-          pathname: "register/setLocalEntrega",
-          params: { update: 'true' }
-        })
-      }}>
-        <Text style={styles.buttonText2}>&lt; Comunidade de entrega</Text>
-      </TouchableOpacity>}
       {(kind == 'entregador' || kind == 'entregador,armazenador') && <TouchableOpacity style={styles.button2} onPress={() => {
         router.push({
           pathname: "register/setDadosEntregador",

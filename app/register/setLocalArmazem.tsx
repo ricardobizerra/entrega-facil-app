@@ -24,7 +24,7 @@ export default function RegisterScreen() {
   const [logradouro, setLogradouro] = useState('');
   const [numero, setNumero] = useState('');
   const [complemento, setComplemento] = useState('');
-  const [visible, setVisible] = useState(false);
+  const [editable, setVisible] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -113,12 +113,13 @@ export default function RegisterScreen() {
         <SectionTitle title="Dados do armazenador" style={{ marginBottom: 32 }} />
         <View style={styles.inputContainer}>
           <FontAwesome name="users" size={24} color="black" />
-          {visible && <TextInput
+          {<TextInput
             style={styles.input}
             placeholder="Comunidade de Atuação"
             placeholderTextColor="#aaa"
             value={comunidade}
             onChangeText={setComunidade}
+            editable={editable}
           />}
         </View>
         {/* <View style={styles.inputContainer}>
@@ -147,41 +148,45 @@ export default function RegisterScreen() {
             }
           }}>
           <FontAwesome name="info" size={14} color="black" />
-          {visible && <TextInput
+          {<TextInput
             style={styles.input}
             placeholder="CEP"
             placeholderTextColor="#aaa"
             value={cep}
             onChangeText={(s) => setCep2(s, setCep)}
+            editable={editable}
           />}
         </View>
         <View style={styles.inputContainer}>
           <FontAwesome name="address-book" size={13} color="black" />
-          {visible && <TextInput
+          {<TextInput
             style={styles.input}
             placeholder="Logradouro"
             placeholderTextColor="#aaa"
             value={logradouro}
             onChangeText={setLogradouro}
+            editable={editable}
           />}
         </View>
         <View style={styles.twoInput}>
           <View style={styles.twoInputContainer}>
-            {visible && <TextInput
+            {<TextInput
               style={styles.input}
               placeholder="Número"
               placeholderTextColor="#aaa"
               value={numero}
               onChangeText={setNumero}
+              editable={editable}
             />}
           </View>
           <View style={styles.twoInputContainer}>
-            {visible && <TextInput
+            {<TextInput
               style={styles.input}
               placeholder="Complemento"
               placeholderTextColor="#aaa"
               value={complemento}
               onChangeText={setComplemento}
+              editable={editable}
             />}
           </View>
         </View>

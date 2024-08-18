@@ -19,7 +19,7 @@ export default function RegisterScreen() {
   const [n_conta, setNConta] = useState('');
   const [titular_conta, setTitular] = useState('');
   const [cpf_titular, setCpfTitular] = useState('');
-  const [visible, setVisible] = useState(false);
+  const [editable, setVisible] = useState(false);
   const [error, setError] = useState('');
 
   const router = useRouter();
@@ -86,49 +86,54 @@ export default function RegisterScreen() {
 
         <View style={styles.inputContainer}>
           <FontAwesome size={24} color="black" />
-          {visible && <TextInput
+          {<TextInput
             style={styles.input}
             placeholder="Banco"
             placeholderTextColor="#aaa"
             value={banco}
             onChangeText={setBanco}
+            editable={editable}
           />}
         </View>
         <View style={styles.inputContainer}>
           <FontAwesome size={13} color="black" />
-          {visible && <TextInput
+          {<TextInput
             style={styles.input}
             placeholder="Agência"
             placeholderTextColor="#aaa"
             value={agencia}
             onChangeText={setAgencia}
+            editable={editable}
           />}
         </View>
         <View style={styles.inputContainer}>
-          {visible && <TextInput
+          {<TextInput
             style={styles.input}
             placeholder="Número da conta"
             placeholderTextColor="#aaa"
             value={n_conta}
             onChangeText={setNConta}
+            editable={editable}
           />}
         </View>
         <View style={styles.inputContainer}>
-          {visible && <TextInput
+          {<TextInput
             style={styles.input}
             placeholder="Titular da conta"
             placeholderTextColor="#aaa"
             value={titular_conta}
             onChangeText={setTitular}
+            editable={editable}
           />}
         </View>
         <View style={styles.inputContainer}>
-          {visible && <TextInput
+          {<TextInput
             style={styles.input}
             placeholder="CPF do titular"
             placeholderTextColor="#aaa"
             value={cpf_titular}
             onChangeText={(s) => setCpf2(s, setCpfTitular)}
+            editable={editable}
           />}
         </View>
         {error ? <Text style={styles.errorText}>{error}</Text> : null}

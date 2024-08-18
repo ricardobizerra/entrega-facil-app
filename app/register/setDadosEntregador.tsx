@@ -23,7 +23,7 @@ export default function RegisterScreen() {
   const [placa, setPlaca] = useState('');
   const [fotoCnh, setCnh] = useState<string | undefined>(undefined);
   const [cnhUrl, setCnhUrl] = useState<string | undefined>(undefined);
-  const [visible, setVisible] = useState(false);
+  const [editable, setVisible] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -38,7 +38,7 @@ export default function RegisterScreen() {
           const newUserQuery = query(usersRef, where('__name__', '==', id));
           const newUserSnapshot = await getDocs(newUserQuery);
           const newUser = newUserSnapshot.docs[0].data();
-          setComunidade(newUser.endereço.comunidade)
+          setComunidade(newUser.entregador.comunidade)
           setVeiculo(newUser.entregador.veiculo)
           setModelo(newUser.entregador.modelo)
           setPlaca(newUser.entregador.placa)
@@ -57,8 +57,8 @@ export default function RegisterScreen() {
       return;
     }
 
-    if (!params.update) {
-      if (veiculo.toLowerCase() !== 'bicicleta' && !fotoCnh) {
+    {
+      if (veiculo.toLowerCase() !== 'bicicleta' && !fotoCnh && !cnhUrl) {
         setError('Por favor, adicione uma foto da CNH\nVeículos que não são bicicleta requerem foto da cnh');
         return;
       }
@@ -126,44 +126,48 @@ export default function RegisterScreen() {
         <SectionTitle title="Dados do entregador" style={{ marginBottom: 32 }} />
         <View style={styles.inputContainer}>
         <FontAwesome name="users" size={24} color="black" />
-        {visible && <TextInput
+        {<TextInput
           style={styles.input}
           placeholder="Comunidade de Atuação"
           placeholderTextColor="#aaa"
           value={comunidade}
           onChangeText={setComunidade}
+          editable = {editable}
         />}
       </View>
         <View style={styles.inputContainer}>
           <FontAwesome name="bicycle" size={24} color="black" />
-          {visible && <TextInput
+          {<TextInput
             style={styles.input}
             placeholder="Tipo de veículo"
             placeholderTextColor="#aaa"
             value={veiculo}
             onChangeText={setVeiculo}
+            editable = {editable}
           />}
         </View>
         <View style={styles.inputContainer}>
           <FontAwesome name="modx" size={13} color="black" />
-          {visible && <TextInput
+          {<TextInput
             style={styles.input}
             placeholder="Modelo do veículo"
             placeholderTextColor="#aaa"
             value={modelo}
             onChangeText={setModelo}
+            editable = {editable}
           />}
         </View>
         <View style={styles.inputContainer}>
-          {visible && <TextInput
+          {<TextInput
             style={styles.input}
             placeholder="Placa do veículo"
             placeholderTextColor="#aaa"
             value={placa}
             onChangeText={setPlaca}
+            editable = {editable}
           />}
         </View>
-        {!params.update && <ImageInput
+        {<ImageInput
           value={fotoCnh}
           onChange={setCnh}
           placeholder="Foto da CNH"
