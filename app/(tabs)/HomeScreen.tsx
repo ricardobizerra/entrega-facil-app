@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, Image, Modal, ScrollView } from 'react-native';
 import * as Location from 'expo-location';
 import { LocationObject } from 'expo-location';
-import Wave from '@/assets/images/wave.svg';
+import Wave from '@/assets/images/Onda.svg';
 import styled from 'styled-components/native';
 import { database } from '@/config/firebaseConfig';
 import How_use from '@/assets/images/instructions.svg';
@@ -14,6 +14,9 @@ import { collection, getDocs, query, where, Timestamp, doc, updateDoc } from 'fi
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Illustration from '@/assets/images/notification_illustration.svg';
 import Exit from '@/assets/images/x.svg';
+import ATT from '@/assets/images/atualizações.svg'
+import Notification from '@/assets/images/noticias.svg'
+import Back from '@/assets/images/back_button.svg'
 
 interface User {
   id?: string;
@@ -55,10 +58,14 @@ const ConfirmButtonText = styled(Text)`
 
 const MapContainer = styled(MapView)`
   width: 100%;
-  height: 300px;
+  height: 200px;
   margin-top: 20px;
-  border-radius: 25px;
   overflow: hidden;
+  background-color: #fff;
+  shadow-color: #000;
+  shadow-opacity: 0.2;
+  shadow-radius: 5px;
+  elevation: 5;
 `;
 
 export interface PackageHistoryItem {
@@ -82,11 +89,14 @@ export interface PackageHistoryItem {
 export default function HomeScreen() {
   const router = useRouter();
   const [location, setLocation] = useState<LocationObject | null>(null);
+  const [address, setAddress] = useState<string>('Carregando localização...');
   const [clientId, setClientId] = useState<string | null>(null);
   const { name } = useLocalSearchParams();
   const [packageHistory, setPackageHistory] = useState<PackageHistoryItem[]>([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [notificationSeen, setNotificationSeen] = useState(false);
+  const [searchText, setSearchText] = useState<string>('');
+  const [isHowUseVisible, setIsHowUseVisible] = useState(false);
 
   const [user] = useState<User | undefined>({
     name: name as string,
@@ -126,6 +136,35 @@ export default function HomeScreen() {
     }
   };
 
+  const searchAddress = async () => {
+    if (searchText) {
+      try {
+        const geocode = await Location.geocodeAsync(searchText);
+        if (geocode.length > 0) {
+          const { latitude, longitude } = geocode[0];
+          setLocation({
+            coords: {
+              latitude,
+              longitude,
+              altitude: 0, // You might need to get actual values or set defaults
+              accuracy: 0, // Same here
+              altitudeAccuracy: 0,
+              heading: 0,
+              speed: 0,
+            },
+            timestamp: Date.now(),
+            mocked: false,
+          });
+          setAddress(searchText);
+        } else {
+          console.log('Endereço não encontrado');
+        }
+      } catch (error) {
+        console.error('Erro ao buscar endereço: ', error);
+      }
+    }
+  };
+
   useEffect(() => {
     (async () => {
       let { status } = await Location.requestForegroundPermissionsAsync();
@@ -135,6 +174,16 @@ export default function HomeScreen() {
       }
       let location = await Location.getCurrentPositionAsync({});
       setLocation(location);
+      if (location) {
+        const geocode = await Location.reverseGeocodeAsync({
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+        });
+        const currentAddress = geocode[0];
+        setAddress(
+          `${currentAddress.street}, ${currentAddress.streetNumber}, ${currentAddress.district}`
+        );
+      }
     })();
   }, []);
 
@@ -169,55 +218,86 @@ export default function HomeScreen() {
 
   return (
     <ScrollView>
-    <HomeScreenContainer>
-      {/* Cabeçalho */}
-      <HeaderContainer>
-        <Alltext>
-          <HeaderText>
-            Olá, <UserName>{user?.name?.split(' ')[0] || ''}</UserName>
-          </HeaderText>
-          <SubtitleText>Essa é sua homepage de entregador.</SubtitleText>
-        </Alltext>
-        <WaveContainer>
-          <Wave />
-        </WaveContainer>
-      </HeaderContainer>
+      <HomeScreenContainer>
+        {/* Cabeçalho */}
+        <HeaderContainer>
+          <Alltext>
+            <HeaderText>
+              Olá, <UserName>{user?.name?.split(' ')[0] || ''}</UserName>
+            </HeaderText>
+            <SubtitleText>Essa é sua homepage de entregador.</SubtitleText>
+          </Alltext>
+          <WaveContainer>
+            <Wave />
+          </WaveContainer>
+        </HeaderContainer>
 
-      <Container>
-        {/* Seção de Localização */}
-        <LocationSection>
-          <LocationText>Você está aqui</LocationText>
-          <LocationAddress>Parque Treze de Maio, Boa Vista, Recife</LocationAddress>
-          <StyledTextInput placeholder="Buscar localidade" />
-          <MapContainer
-                  initialRegion={{
-                    latitude: -8.062858931467051,
-                    longitude: -34.871823742876316,
-                    latitudeDelta: 0.0922,
-                    longitudeDelta: 0.0421,
+        <Container>
+          {/* Seção de Localização */}
+          <LocationSection>
+            <LocationText>Você está aqui</LocationText>
+            <LocationAddress>{address}</LocationAddress>
+            <StyledTextInput
+              placeholder="Buscar localidade"
+              value={searchText}
+              onChangeText={(text) => setSearchText(text)}
+              onSubmitEditing={searchAddress}
+            />
+            {location && (
+              <MapContainer
+                initialRegion={{
+                  latitude: location.coords.latitude,
+                  longitude: location.coords.longitude,
+                  latitudeDelta: 0.0922,
+                  longitudeDelta: 0.0421,
+                }}
+              >
+                <Marker
+                  coordinate={{
+                    latitude: location.coords.latitude,
+                    longitude: location.coords.longitude,
                   }}
-                >
-                  <Marker
-                    coordinate={{ latitude: -8.062858931467051, longitude: -34.87182374287631 }}
-                  />
-                </MapContainer>
-        </LocationSection>
+                />
+              </MapContainer>
+            )}
+          </LocationSection>
 
-        {/* Seção de Ação */}
-        <TouchableOpacity onPress={() => router.push('/how_use.tsx')}>
-          <HowUseContainer>
-            <How_use />
-          </HowUseContainer>
-        </TouchableOpacity>
+          {/* Seção de Ação */}
+          <TouchableOpacity 
+              onPress={() => setIsHowUseVisible(true)}
+              activeOpacity={1}>
+              <HowUseContainer>
+                <How_use />
+              </HowUseContainer>
+          </TouchableOpacity>
 
-        {/* Ações */}
-        <ActionsSection>
-          <ActionsText>Ações</ActionsText>
-        </ActionsSection>
+          <ActionsText>Notícias e atualizações</ActionsText>
+          {/* Ações */}
+          <ActionsSection>
+            <Notification />
+            <ATT />
+            <Notification />
+            {/* Adicione mais imagens conforme necessário */}
+          </ActionsSection>
 
-        <NewThingsModal isVisible={isModalVisible && !notificationSeen} />
-      </Container>
-    </HomeScreenContainer>
+          <NewThingsModal isVisible={isModalVisible && !notificationSeen} />
+        </Container>
+      </HomeScreenContainer>
+      <Modal
+          visible={isHowUseVisible}
+          animationType="slide"
+          transparent={true}
+          onRequestClose={() => setIsHowUseVisible(false)}
+        >
+          <ModalContainer>
+            <ModalContent>
+            <CloseButton onPress={() => setIsHowUseVisible(false)}>
+              <Back />
+            </CloseButton>
+              <Text style={{ fontSize: 24, fontWeight: 'bold', marginBottom: 20 }}>Como usar o Tá Entregue</Text>
+            </ModalContent>
+          </ModalContainer>
+        </Modal>
     </ScrollView>
   );
 }
@@ -233,17 +313,18 @@ const HeaderContainer = styled(View)`
   flex-direction: row;
   align-items: center;
   box-sizing: border-box;
+  margin-bottom: -15px;
 `;
 
 const HeaderText = styled(Text)`
   color: #f2f2f2;
-  font-size: 36px;
+  font-size: 28px;
   font-weight: 700;
-  margin-top: 30px;
+  margin-top: 15px;
 `;
 
 const SubtitleText = styled(Text)`
-  font-size: 14px;
+  font-size: 10px;
   color: #ccc;
   margin-bottom: 10px;
 `;
@@ -278,14 +359,7 @@ const LocationText = styled(Text)`
 
 const LocationAddress = styled(Text)`
   font-size: 14px;
-  color: #333;
-  margin-bottom: 15px;
-`;
-
-const StyledImage = styled(Image)`
-  width: 100%;
-  height: 200px;
-  border-radius: 10px;
+  color: #3a3a3a;
   margin-bottom: 10px;
 `;
 
@@ -295,17 +369,28 @@ const StyledTextInput = styled(TextInput)`
   padding-left: 15px;
   margin-bottom: 15px;
   background-color: #f0f0f0;
+  shadow-color: #000;
+  shadow-opacity: 0.2;
+  shadow-radius: 5px;
+  elevation: 5;
 `;
 
 const ActionsText = styled(Text)`
   font-size: 20px;
   color: black;
-  margin-bottom: 20px;
+  margin-top: 20px;
   font-weight: bold;
 `;
 
-const ActionsSection = styled(View)`
+const ActionsSection = styled(ScrollView).attrs({
+  horizontal: true,
+  showsHorizontalScrollIndicator: false,
+  contentContainerStyle: {
+    paddingHorizontal: 10,
+  },
+})`
   margin-top: 30px;
+  flex-direction: row;
 `;
 
 const Alltext = styled(View)`
@@ -322,4 +407,34 @@ const HowUseContainer = styled(View)`
   overflow: hidden; 
   align-items: center;
   justify-content: center;
+  margin-top: 40px;
+  background-color: #f5f5f5;
+  shadow-color: #000;
+  shadow-opacity: 0.2;
+  shadow-radius: 5px;
+  elevation: 5;
+`;
+
+const ModalContainer = styled(View)`
+  flex: 1;
+  justify-content: flex-end;
+  align-items: center;
+  background-color: rgba(0, 0, 0, 0.5);
+`;
+
+const ModalContent = styled(View)`
+  width: 100%;
+  background-color: #ffffff;
+  padding: 20px;
+  border-top-left-radius: 20px;
+  border-top-right-radius: 20px;
+  align-items: center;
+  margin-top: 10px;
+`;
+
+const CloseButton = styled(TouchableOpacity)`
+  align-self: flex-start;
+  margin-top: 10px;
+  margin-bottom: 10px;
+
 `;
