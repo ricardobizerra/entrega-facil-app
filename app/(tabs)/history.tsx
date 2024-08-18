@@ -1,17 +1,53 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { database } from '@/config/firebaseConfig';
-import { collection, getDocs, query, where, Timestamp, doc, updateDoc } from 'firebase/firestore';
+import { onSnapshot, collection, getDocs, query, where, Timestamp, doc, updateDoc } from 'firebase/firestore';
 import styled from 'styled-components/native';
 import { Text, View, TouchableOpacity, TextInput, Modal, Dimensions, TouchableWithoutFeedback, Image, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { format, isToday, isTomorrow, isYesterday, subDays, addDays } from 'date-fns';
+import { format, isToday, isTomorrow, isYesterday, subDays, addDays, set } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import Logo from '@/assets/images/logo-no-text.svg';
 import SearchIcon from '@/assets/images/search-icon.svg';
 import OrderDetail from '../orderDetail';
+import OrderIcon from '@/assets/images/orderIcon.svg';
+import OrderIconStorage from '@/assets/images/orderIconStorage.svg';
 import Wave from '@/assets/images/wave.svg';
+import WaveStorage from '@/assets/images/wave-storage.svg';
 import { Header } from 'react-native/Libraries/NewAppScreen';
+
+const CodeContainer = styled(View)`
+  flex-direction: row;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  width: 100%;
+`;
+
+const CodeBox = styled(View)`
+  flex: 1;
+  background-color: #f5f5f5;
+  height: 70px;
+  border-radius: 20px;
+  align-items: center;
+  margin: 0 2px;
+  text-align: center;
+  justify-content: center;
+`;
+
+const CodeText = styled(Text)`
+  font-size: 20px;
+  color: #000;
+`;
+
+const HiddenTextInput = styled(TextInput)`
+  position: absolute;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  color: transparent;
+  background-color: transparent;
+  z-index: 10;
+`;
 
 const ActionDetails = styled(View)`
   width: 100%;
@@ -121,6 +157,7 @@ const TabsContainer = styled(View)`
 
 interface TabTextProps {
   selected: boolean;
+  kind: string | null;
 }
 
 const StyledImage = styled(Image).attrs({
@@ -144,10 +181,17 @@ const TabText = styled(Text)<TabTextProps>`
   margin-bottom: 10px;
   padding-bottom: 10px;
   margin-right: 20px;
-  color: ${({ selected }) => (selected ? '#FA4A0C' : '#9A9A9D')};
+  color: ${({ selected, kind }) => 
+    selected 
+      ? (kind === 'armazenador' ? '#16488D' : '#FA4A0C') 
+      : '#9A9A9D'};
   border-bottom-width: ${({ selected }) => (selected ? '3px' : '0')};
-  border-bottom-color: ${({ selected }) => (selected ? '#FA4A0C' : 'transparent')}; 
+  border-bottom-color: ${({ selected, kind }) => 
+    selected 
+      ? (kind === 'armazenador' ? '#16488D' : '#FA4A0C') 
+      : 'transparent'};
 `;
+
 
 const SearchContainer = styled(View)`
   flex-direction: row;
@@ -167,8 +211,12 @@ const SearchIconContainer = styled(View)`
   margin-right: 10px;
 `;
 
-const AcceptButton = styled(TouchableOpacity)`
-  background-color: #DB3319;
+interface AcceptProps {
+  kind : string | null;
+}
+
+const AcceptButton = styled(TouchableOpacity)<AcceptProps>`
+  background-color: ${({kind }) => kind === 'armazenador' ? '#16488D' : '#FA4A0C'};
   padding: 10px;
   border-radius: 25px;
   margin-top: 10px;
@@ -188,8 +236,12 @@ const AcceptButtonText = styled(Text)`
   text-align: center;
 `;
 
-const ConfirmButton = styled(TouchableOpacity)`
-  background-color: #DB3319;
+interface ConfirmProps {
+  kind: string | null;
+}
+
+const ConfirmButton = styled(TouchableOpacity)<ConfirmProps>`
+  background-color: ${({ kind }) => kind === 'armazenador' ? '#16488D' : '#FA4A0C'};
   padding: 10px;
   border-radius: 25px;
   margin-top: 10px;
@@ -210,6 +262,8 @@ export const getStatusColor = (status: string): string => {
       return '#F5A623';
     case 'received':
       return '#4CAF50';
+    case 'canceled':
+      return '#FF5733';
     default:
       return '#000000';
   }
@@ -218,7 +272,7 @@ export const getStatusColor = (status: string): string => {
 export interface PackageHistoryItem {
   id: string;
   status: string;
-  client_id: string;
+  client_id: string[];
   creation_date: Timestamp;
   arrival_date: Timestamp;
   delivery_actions: { [key: string]: { action: string; timestamp: Timestamp; notification_action?: string; } };
@@ -231,6 +285,7 @@ export interface PackageHistoryItem {
   weight: 'light' | 'medium';
   order_name: string;
   storage_code: string;
+  stored: boolean;
 }
 
 export default function History() {
@@ -245,29 +300,85 @@ export default function History() {
   const [confirmModalVisible, setConfirmModalVisible] = useState(false);
   const [enteredCode, setEnteredCode] = useState('');
   const codeInputRef = useRef<TextInput>(null);
+  const [userKind, setUserKind] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (userKind === 'armazenador') {
+      setSelectedTab('Em andamento');
+    }
+  }, [userKind]);
 
 
   const fetchHistoryFromFirebase = async (clientId: string) => {
     try {
-      const q = query(collection(database, 'products'), where('client_id', '==', clientId));
+      const q = query(collection(database, 'products'), where('client_id', 'array-contains', clientId));
+
       const querySnapshot = await getDocs(q);
       const newEntries = querySnapshot.docs.map((doc) => ({
         id: doc.id,
+        stored: doc.data().stored,
         ...doc.data(),
         delivery_actions: doc.data().delivery_actions || {},
       })) as PackageHistoryItem[];
       setPackageHistory(newEntries);
       filterOrdersByStatus(selectedTab, newEntries); 
+
     } catch (error) {
       console.error('Error fetching data: ', error);
     }
   };
 
+
+  const fetchUserKind = async (clientId: string) => {
+    try {
+      const q = query(collection(database, 'users'), where('clientId', 'array-contains', clientId));
+      const querySnapshot = await getDocs(q);
+
+      if (!querySnapshot.empty) {
+        const userData = querySnapshot.docs[0].data();
+        const kind = userData.kind;
+
+        if (kind === 'entregador' || kind === 'armazenador') {
+          setUserKind(kind);
+          console.log(`User kind is: ${kind}`);
+        } else {
+          console.log('User kind is neither entregador nor armazenador');
+        }
+      } else {
+        console.log('No user found with the provided clientId');
+      }
+    } catch (error) {
+      console.error('Error fetching user data: ', error);
+    }
+  };
+
+  useEffect(() => {
+    if (clientId) {
+      const q = query(collection(database, 'products'), where('client_id', 'array-contains', clientId));
+
+      const unsubscribe = onSnapshot(q, (querySnapshot) => {
+        const newEntries = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          stored: doc.data().stored,
+          ...doc.data(),
+          delivery_actions: doc.data().delivery_actions || {},
+        })) as PackageHistoryItem[];
+        setPackageHistory(newEntries);
+        filterOrdersByStatus(selectedTab, newEntries); 
+      });
+
+      // Cleanup listener on component unmount
+      return () => unsubscribe();
+    }
+  }, [clientId, selectedTab]);
+
   const getClientId = async () => {
     try {
       const clientId = await AsyncStorage.getItem('userEmail');
+      const userKind = await AsyncStorage.getItem('kind');
       if (clientId) {
         setClientId(clientId);
+        setUserKind(userKind);
         fetchHistoryFromFirebase(clientId);
       } else {
         console.log('No client ID found');
@@ -294,18 +405,34 @@ export default function History() {
     orders: PackageHistoryItem[]
   ) => {
     let filtered: PackageHistoryItem[];
-    switch (status) {
-      case 'Pendentes':
-        filtered = orders.filter(order => !order.accepted);
-        break;
-      case 'Em andamento':
-        filtered = orders.filter(order => order.accepted && order.status !== 'received' && order.status !== 'canceled');
-        break;
-      case 'Finalizados':
-        filtered = orders.filter(order => order.status === 'received' || order.status === 'canceled');
-        break;
+
+    if (userKind === 'entregador') {
+      switch (status) {
+        case 'Pendentes':
+          filtered = orders.filter(order => !order.accepted && order.stored === true);
+          break;
+        case 'Em andamento':
+          filtered = orders.filter(order => order.accepted && order.status !== 'received' && order.status !== 'canceled' && order.stored === true);
+          break;
+        case 'Finalizados':
+          filtered = orders.filter(order => order.status === 'received' && order.stored === true || order.status === 'canceled' && order.stored === true);
+          break;
+      }
+      setFilteredOrders(filtered);
+    } else {
+      switch (status) {
+        case 'Pendentes':
+          filtered = orders.filter(order => order.stored === false || order.stored === true);
+          break;
+        case 'Em andamento':
+          filtered = orders.filter(order => order.status !== 'received' && order.status !== 'canceled');
+          break;
+        case 'Finalizados':
+          filtered = orders.filter(order => order.status === 'received' || order.status === 'canceled');
+          break;
+      }
+      setFilteredOrders(filtered);
     }
-    setFilteredOrders(filtered);
   };
 
   const getWeightText = (weight: 'light' | 'medium') => {
@@ -328,7 +455,7 @@ export default function History() {
     [key: string]: { action: string; timestamp: Timestamp };
   }) => {
     const actions = Object.values(delivery_actions);
-    if (actions.length === 0) return { action: 'Nenhuma ação disponível', timestamp: '' };
+    if (actions.length === 0) return { action: 'A caminho do centro de armazenamento', timestamp: Timestamp.now() };
 
     actions.sort(
       (a, b) => b.timestamp.toDate().getTime() - a.timestamp.toDate().getTime()
@@ -336,19 +463,24 @@ export default function History() {
     const lastAction = actions[0];
     return {
       action: lastAction.action,
-      timestamp: format(lastAction.timestamp.toDate(), "dd/MM/yyyy HH:mm", {
-        locale: ptBR,
-      }),
+      timestamp: lastAction.timestamp
     };
   };
 
   const acceptOrder = async (orderId: string) => {
     try {
+      const now = Timestamp.now();
       const orderRef = doc(database, 'products', orderId);
-      await updateDoc(orderRef, { accepted: true });
+      await updateDoc(orderRef, { accepted: true, delivery_actions: {
+        ...packageHistory.find(order => order.id === orderId)?.delivery_actions,
+        [now.toMillis()]: { action: 'Esperando retirada do entregador', timestamp: now }
+      } });
 
       const updatedHistory = packageHistory.map(order =>
-        order.id === orderId ? { ...order, accepted: true } : order
+        order.id === orderId ? { ...order, accepted: true, delivery_actions: {
+          ...packageHistory.find(order => order.id === orderId)?.delivery_actions,
+          [now.toMillis()]: { action: 'Esperando retirada do entregador', timestamp: now }
+        } } : order
       );
 
       setPackageHistory(updatedHistory);
@@ -361,12 +493,33 @@ export default function History() {
   const rejectOrder = async (orderId: string) => {
     try {
       const orderRef = doc(database, 'products', orderId);
-      await updateDoc(orderRef, { accepted: true, status: 'canceled' });
-
+      
+      // Get the current timestamp
+      const now = Timestamp.now();
+  
+      // Update the delivery actions with the new "Entrega cancelada" action
+      await updateDoc(orderRef, {
+        accepted: true,
+        status: 'canceled',
+        delivery_actions: {
+          ...packageHistory.find(order => order.id === orderId)?.delivery_actions,
+          [now.toMillis()]: { action: 'Entrega cancelada', timestamp: now }
+        }
+      });
+  
+      // Update the local state
       const updatedHistory = packageHistory.map(order =>
-        order.id === orderId ? { ...order, accepted: true } : order
+        order.id === orderId ? {
+          ...order,
+          accepted: true,
+          status: 'canceled',
+          delivery_actions: {
+            ...order.delivery_actions,
+            [now.toMillis()]: { action: 'Entrega cancelada', timestamp: now }
+          }
+        } : order
       );
-
+  
       setPackageHistory(updatedHistory);
       filterOrdersByStatus(selectedTab, updatedHistory);
     } catch (error) {
@@ -374,6 +527,78 @@ export default function History() {
     }
   };
 
+  const storeOrder = async (orderId: string) => {
+    try {
+      const orderRef = doc(database, 'products', orderId);
+      
+      // Get the current timestamp
+      const now = Timestamp.now();
+  
+      // Update the delivery actions with the new "Entrega cancelada" action
+      await updateDoc(orderRef, {
+        stored: true,
+        status: 'processing',
+        delivery_actions: {
+          ...packageHistory.find(order => order.id === orderId)?.delivery_actions,
+          [now.toMillis()]: { action: 'Pacote armazenado', timestamp: now }
+        }
+      });
+  
+      // Update the local state
+      const updatedHistory = packageHistory.map(order =>
+        order.id === orderId ? {
+          ...order,
+          stored: true,
+          status: 'processing',
+          delivery_actions: {
+            ...packageHistory.find(order => order.id === orderId)?.delivery_actions,
+            [now.toMillis()]: { action: 'Pacote armazenado', timestamp: now }
+          }
+        } : order
+      );
+  
+      setPackageHistory(updatedHistory);
+      filterOrdersByStatus(selectedTab, updatedHistory);
+    } catch (error) {
+      console.error('Error accepting order: ', error);
+    }
+  };
+
+  const sendOrder = async (orderId: string) => {
+    try {
+      const orderRef = doc(database, 'products', orderId);
+      
+      // Get the current timestamp
+      const now = Timestamp.now();
+  
+      // Update the delivery actions with the new "Entrega cancelada" action
+      await updateDoc(orderRef, {
+        stored: true,
+        status: 'sent',
+        delivery_actions: {
+          ...packageHistory.find(order => order.id === orderId)?.delivery_actions,
+          [now.toMillis()]: { action: 'Saiu para entrega', timestamp: now }
+        }
+      });
+  
+      const updatedHistory = packageHistory.map(order =>
+        order.id === orderId ? {
+          ...order,
+          stored: true,
+          status: 'sent',
+          delivery_actions: {
+            ...packageHistory.find(order => order.id === orderId)?.delivery_actions,
+            [now.toMillis()]: { action: 'Saiu para entrega', timestamp: now }
+          }
+        } : order
+      );
+  
+      setPackageHistory(updatedHistory);
+      filterOrdersByStatus(selectedTab, updatedHistory);
+    } catch (error) {
+      console.error('Error accepting order: ', error);
+    }
+  };
 
   const confirmDelivery = async (orderId: string) => {
     setSelectedProductId(orderId);
@@ -385,10 +610,27 @@ export default function History() {
     if (orderDetails && enteredCode === orderDetails.code) { // Assuming orderDetails.code exists
       try {
         const orderRef = doc(database, 'products', selectedProductId);
-        await updateDoc(orderRef, { status: 'received' });
+        const now = Timestamp.now();
 
+        await updateDoc(orderRef, {
+          stored: true,
+          status: 'received',
+          delivery_actions: {
+            ...packageHistory.find(order => order.id === selectedProductId)?.delivery_actions,
+            [now.toMillis()]: { action: 'Pedido entregue', timestamp: now }
+          }
+        });
+    
         const updatedHistory = packageHistory.map(order =>
-          order.id === selectedProductId ? { ...order, status: 'received' } : order
+          order.id === selectedProductId ? {
+            ...order,
+            stored: true,
+            status: 'received',
+            delivery_actions: {
+              ...packageHistory.find(order => order.id === selectedProductId)?.delivery_actions,
+              [now.toMillis()]: { action: 'Pedido entregue', timestamp: now }
+            }
+          } : order
         );
 
         setPackageHistory(updatedHistory);
@@ -425,13 +667,19 @@ export default function History() {
         console.error('Error confirming delivery: ', error);
       }
     } else {
-      alert('Invalid code. Please try again.');
+      alert('Código inválido');
     }
   };
 
 
   useEffect(() => {
     getClientId();
+    const intervalId = setInterval(() => {
+      if (clientId) {
+        fetchHistoryFromFirebase(clientId);
+      }
+    }, 5000); 
+    return () => clearInterval(intervalId);
   }, []);
 
   useEffect(() => {
@@ -459,12 +707,31 @@ export default function History() {
     }
   };
 
+
+  const renderCodeBoxes = () => {
+    const boxes = [];
+    for (let i = 0; i < 13; i++) {
+      boxes.push(
+        <CodeBox key={i}>
+          <CodeText>{enteredCode[i] || ''}</CodeText>
+        </CodeBox>
+      );
+    }
+    return boxes;
+  };
+
+  useEffect(() => {
+    if (codeInputRef.current) {
+      codeInputRef.current.focus();
+    }
+  }, []);
+
   return (
     <HistoryContainerBackground>
       <HeaderContainer>
         <HeaderText>Pedidos</HeaderText>
         <WaveContainer>
-          <Wave />
+            {userKind === 'armazenador' ? <WaveStorage /> : <Wave />}
         </WaveContainer>
       </HeaderContainer>
 
@@ -472,14 +739,16 @@ export default function History() {
       <ScrollView>
 
         <TabsContainer>
+        {userKind !== 'armazenador' && (
           <TouchableOpacity onPress={() => setSelectedTab('Pendentes')}>
-            <TabText selected={selectedTab === 'Pendentes'}>Pendentes</TabText>
+            <TabText selected={selectedTab === 'Pendentes'} kind={userKind}>Pendentes</TabText>
           </TouchableOpacity>
+        )}
           <TouchableOpacity onPress={() => setSelectedTab('Em andamento')}>
-            <TabText selected={selectedTab === 'Em andamento'}>Em andamento</TabText>
+            <TabText selected={selectedTab === 'Em andamento'} kind={userKind}>Em andamento</TabText>
           </TouchableOpacity>
           <TouchableOpacity onPress={() => setSelectedTab('Finalizados')}>
-            <TabText selected={selectedTab === 'Finalizados'}>Finalizados</TabText>
+            <TabText selected={selectedTab === 'Finalizados'} kind={userKind}>Finalizados</TabText>
           </TouchableOpacity>
         </TabsContainer>
 
@@ -497,7 +766,7 @@ export default function History() {
         {filteredOrders.map((item, index) => (
           <TouchableOpacity key={index} onPress={() => handleOrderDetail(item.id)}>
             <HistoryItem>
-              <StyledImage source={{ uri: item.icon }} />
+              {userKind === 'armazenador' ? <OrderIconStorage style={{marginRight: 20}}/> : <OrderIcon style={{marginRight: 20}}/>}
               <View style={{ flex: 1 }}>
                 <HistoryTitleText>Pedido {item.order_name}</HistoryTitleText>
                 <HistoryText>
@@ -517,35 +786,29 @@ export default function History() {
               </View>
               <ActionDetails>
                 <ActionContainer>
-                {item.accepted === true && (
                   <ActionDot
                     style={{
                       backgroundColor: getStatusColor(item.status.toLowerCase()),
                     }}
-                  />)}
-                  {item.accepted === true && (
+                  />
                   <HistoryText
                     numberOfLines={1}
                     ellipsizeMode="tail"
                     style={{ flex: 1 }}
                   >
                     
-                    {item.status === 'received'
-                      ? `Pedido entregue`
-                      : item.status === 'canceled' ? `Entrega cancelada` : `Prazo de entrega`
-                    }
-                  </HistoryText>)}
-                  {item.accepted === true && (
+                    {getLastAction(item.delivery_actions).action}
+                  </HistoryText>
                   <HistoryText
                     numberOfLines={1}
                     ellipsizeMode="tail"
                     style={{ flex: 1 }}
                   >
-                      {getRelativeDate(item.arrival_date.toDate())}
-                  </HistoryText>)}
+                      {getRelativeDate(getLastAction(item.delivery_actions).timestamp.toDate())}
+                  </HistoryText>
                 </ActionContainer>
                 {selectedTab === 'Pendentes' && (
-                  <AcceptButton onPress={() => acceptOrder(item.id)}>
+                  <AcceptButton onPress={() => acceptOrder(item.id)} kind={userKind}>
                     <AcceptButtonText>Aceitar</AcceptButtonText>
                   </AcceptButton>
                 )}
@@ -554,15 +817,39 @@ export default function History() {
                     <AcceptButtonText>Rejeitar</AcceptButtonText>
                   </RejectButton>
                 )}
-                {selectedTab === 'Em andamento' && item.status.toLowerCase() === 'sent' && (
-                  <ConfirmButton onPress={() => confirmDelivery(item.id)}>
+                {selectedTab === 'Em andamento' && item.status.toLowerCase() === 'sent' && userKind === 'entregador' && (
+                  <ConfirmButton onPress={() => confirmDelivery(item.id)} kind={userKind}>
                     <ConfirmButtonText>Marcar como entregue</ConfirmButtonText>
                   </ConfirmButton>
                 )}
 
-                {selectedTab === 'Em andamento' && item.status.toLowerCase() === 'processing' && (
-                  <ConfirmButton onPress={() => confirmStorage(item.id)}>
+                {selectedTab === 'Em andamento' && item.status.toLowerCase() === 'processing' && userKind === 'entregador' && (
+                  <ConfirmButton onPress={() => confirmStorage(item.id)} kind={userKind}>
                     <ConfirmButtonText>Autenticar com armazenador</ConfirmButtonText>
+                  </ConfirmButton>
+                )}
+
+                {selectedTab === 'Em andamento' && item.stored === false && (
+                  <ConfirmButton onPress={() => storeOrder(item.id)} kind={userKind}>
+                    <ConfirmButtonText>Marcar como armazenado</ConfirmButtonText>
+                  </ConfirmButton>
+                )}
+
+                {selectedTab === 'Em andamento' && item.stored === true && item.accepted === false && userKind === 'armazenador' && (
+                  <ConfirmButton kind={userKind} style={{backgroundColor: '#3A3A3A'}}>
+                    <ConfirmButtonText>Marcar como armazenado</ConfirmButtonText>
+                  </ConfirmButton>
+                )}
+
+                {selectedTab === 'Em andamento' && item.stored === true && item.accepted === true && item.status !== 'sent' && userKind === 'armazenador' && (
+                  <ConfirmButton kind={userKind} style={{backgroundColor: '#3A3A3A'}}>
+                    <ConfirmButtonText>Confirmar entregador</ConfirmButtonText>
+                  </ConfirmButton>
+                )}
+
+                {selectedTab === 'Em andamento' && item.stored === true && item.accepted === true && item.status === 'sent' && userKind === 'armazenador' && (
+                  <ConfirmButton onPress={() => sendOrder(item.id)} kind={userKind}>
+                    <ConfirmButtonText>Confirmar entregador</ConfirmButtonText>
                   </ConfirmButton>
                 )}
 
@@ -589,7 +876,7 @@ export default function History() {
                 style={{
                   width: Dimensions.get('window').width * 1,
                   height: Dimensions.get('window').height * 0.8,
-                  backgroundColor: 'white',
+                  backgroundColor: '#f5f5f5',
                   borderRadius: 30,
                   padding: 20,
                   position: 'absolute',
@@ -598,6 +885,7 @@ export default function History() {
               >
                 <OrderDetail
                   client_id={clientId}
+                  kind={userKind}
                   product_id={selectedProductId}
                   closeModal={() => setModalVisible(false)}
                 />
@@ -620,32 +908,32 @@ export default function History() {
                 style={{
                   width: Dimensions.get('window').width - 40,
                   backgroundColor: '#fff',
-                  padding: 20,
-                  borderRadius: 10,
+                  padding: 40,
+                  paddingTop: 70,
+                  borderRadius: 30,
                 }}
               >
-                <Text style={{ fontSize: 16, fontWeight: '700', marginBottom: 20 }}>Confirmar Entrega</Text>
+                <Text style={{ fontSize: 16, fontWeight: '900', marginBottom: 2 }}>
+                  {packageHistory.find(order => order.id === selectedProductId)?.status.toLowerCase() === 'sent' ? 'Digite o código de confirmação de entrega' : 'Digite o código de rastreamento do produto'}
+                </Text>
+                <Text style={{ fontSize: 12, fontWeight: '400', marginBottom: 8 }}>{packageHistory.find(order => order.id === selectedProductId)?.status.toLowerCase() === 'sent' ? 'Digite o código fornecido ao cliente para confirmar a entrega' : 'Ele será usado para autenticar o pedido com o armazenador'}</Text>
                 <TouchableWithoutFeedback>
                   <View>
-                    <TextInput
-                      ref={codeInputRef}
-                      style={{
-                        height: 40,
-                        borderColor: 'gray',
-                        borderWidth: 1,
-                        marginBottom: 20,
-                        paddingLeft: 10,
-                      }}
-                      placeholder="Digite o código"
-                      value={enteredCode}
-                      onChangeText={setEnteredCode}
-                    />
+                  <CodeContainer>
+                    {renderCodeBoxes()}
+                  </CodeContainer>
+                  <HiddenTextInput
+                    ref={codeInputRef}
+                    value={enteredCode}
+                    onChangeText={setEnteredCode}
+                    maxLength={13}
+                  />
                   </View>
                 </TouchableWithoutFeedback>
-                {packageHistory.find(order => order.id === selectedProductId)?.status.toLowerCase() === 'sent' ? (<ConfirmButton onPress={verifyAndConfirmDelivery}>
-                  <ConfirmButtonText>Confirmar</ConfirmButtonText>
-                </ConfirmButton>) : (<ConfirmButton onPress={verifyAndConfirmStorage}>
-                  <ConfirmButtonText>Confirmar</ConfirmButtonText>
+                {packageHistory.find(order => order.id === selectedProductId)?.status.toLowerCase() === 'sent' ? (<ConfirmButton onPress={verifyAndConfirmDelivery} kind={userKind}>
+                  <ConfirmButtonText>Confirmar entrega</ConfirmButtonText>
+                </ConfirmButton>) : (<ConfirmButton onPress={verifyAndConfirmStorage} kind={userKind}>
+                  <ConfirmButtonText>Autenticar com armazenador</ConfirmButtonText>
                 </ConfirmButton>)}
                 
               </View>

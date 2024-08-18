@@ -21,11 +21,20 @@ const MapContainer = styled(MapView)`
 const HorizontalContainer = styled(View)`
   flex-direction: row;
   align-items: center;
+  margin-bottom: 10px;
+`;
+
+const LabelDot = styled(View)`
+  width: 4px;
+  height: 4px;
+  border-radius: 4px;
+  margin-left: 20px;
+  background-color: #000;
 `;
 
 const LabelText = styled(Text)`
   font-weight: bold;
-  margin-right: 10px;
+  margin-left: 10px;
 `;
 
 const ValueText = styled(Text)`
@@ -38,7 +47,7 @@ const OrderDetailContainer = styled(View)`
   flex-direction: column;
   align-items: left;
   padding: 10px;
-  background-color: #ffffff;
+  background-color: #f5f5f5;
 `;
 
 const BackButtonContainer = styled(View)`
@@ -211,7 +220,7 @@ const IncidentFormButtonText = styled(Text)`
 interface PackageOrderDetailItem {
   id: string;
   status: string;
-  client_id: string;
+  client_id: string[];
   creation_date: Timestamp;
   arrival_date: Timestamp;
   delivery_actions: { [key: string]: { action: string; timestamp: Timestamp } };
@@ -222,15 +231,17 @@ interface PackageOrderDetailItem {
   sensitive: boolean;
   client_name: string;
   location: { latitude: number; longitude: number };
+  availability: string;
 }
 
 interface OrderDetailProps {
   client_id: string | null;
+  kind: string | null;
   product_id: string;
   closeModal: () => void;
 }
 
-const OrderDetail: React.FC<OrderDetailProps> = ({ client_id, product_id, closeModal }) => {
+const OrderDetail: React.FC<OrderDetailProps> = ({ client_id, kind, product_id, closeModal }) => {
   const [packageOrderDetail, setPackageOrderDetail] = useState<PackageOrderDetailItem[]>([]);
   const [isPopupVisible, setIsPopupVisible] = useState(false);
   const [isIncidentFormVisible, setIsIncidentFormVisible] = useState(false);
@@ -240,7 +251,7 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ client_id, product_id, closeM
     try {
       const q = query(
         collection(database, 'products'),
-        where('client_id', '==', client_id)
+        where('client_id', 'array-contains', client_id)
       );
       const querySnapshot = await getDocs(q);
       const newEntries = querySnapshot.docs.map(doc => ({
@@ -303,13 +314,13 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ client_id, product_id, closeM
     const now = new Date();
   
     if (isToday(date)) {
-      return format(date, "'hoje às' HH:mm", { locale: ptBR });
+      return format(date, "'Hoje às' HH:mm", { locale: ptBR });
     } else if (isTomorrow(date)) {
-      return format(date, "'amanhã às' HH:mm", { locale: ptBR });
+      return format(date, "'Amanhã às' HH:mm", { locale: ptBR });
     } else if (isYesterday(date)) {
-      return format(date, "'ontem às' HH:mm", { locale: ptBR });
+      return format(date, "'Ontem às' HH:mm", { locale: ptBR });
     } else {
-      return format(date, "'em' dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
+      return format(date, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
     }
   };
 
@@ -324,73 +335,75 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ client_id, product_id, closeM
       {packageOrderDetail.map((order, index) => (
         <View key={order.id}>
           <OrderDetailIcon>
-            <View>
-              <OrderTitleText>Pedido {order.order_name}</OrderTitleText>
+            <View style= {
+              {width: Dimensions.get('window').width * 0.9}
+            }>
+              <Text style={{fontSize: 24, fontWeight: 700}}>Pedido {order.order_name}</Text>
               <ActionContainer>
                   <ActionDot
                     style={{
                       backgroundColor: getStatusColor(order.status.toLowerCase()),
                     }}
                   />
-                  <OrderDetailText> {order.status === 'received'
-                      ? `Finalizado`
-                      : `Em andamento`
-                  } </OrderDetailText>
+                  <OrderDetailText>
+                    {getLastAction(order.delivery_actions).action}
+                  </OrderDetailText>
 
                   <OrderDetailText>
-                    {order.status === 'received'
-                        ? `Finalizado ${getRelativeDate(order.arrival_date.toDate())}`
-                        : `Iniciado ${getRelativeDate(order.creation_date.toDate())}`
-                    }                   
+                    {getRelativeDate(order.creation_date.toDate())}              
                   </OrderDetailText>
               </ActionContainer>
-              <OrderTitleText>Dados do pedido</OrderTitleText>
-              <StyledImage source={{ uri: order.icon }} style={{marginBottom: 20}} />
+              <OrderTitleText style={{marginBottom: 10}}>Dados do pedido</OrderTitleText>
 
-              <OrderDetailText>
-                  {getWeightText(order.weight)}                </OrderDetailText>
-              <OrderDetailText>
-                  Objeto sensível? {order.sensitive ? 'Sim' : 'Não'}
-              </OrderDetailText>
-              <View style={{marginTop: 10}}>
               <HorizontalContainer>
-                <LabelText
-                    numberOfLines={1}
-                    ellipsizeMode="tail"
-                >
-                    {order.status === 'received'
-                      ? `Pedido entregue`
-                      : `Prazo de entrega`
-                    }
-                  </LabelText>
-                  <ValueText
-                    numberOfLines={1}
-                    ellipsizeMode="tail"
-                  >
-                      {getRelativeDate(order.arrival_date.toDate())}
-                  </ValueText>
-                  </HorizontalContainer>
-                  <HorizontalContainer>
-                <LabelText>Entregar para</LabelText>
+                  <LabelDot></LabelDot>
+                  <LabelText>Peso: </LabelText>
+                  <ValueText>{getWeightText(order.weight)}</ValueText>
+              </HorizontalContainer>
+
+              <HorizontalContainer>
+                  <LabelDot></LabelDot>
+                  <LabelText>Objeto sensível? </LabelText>
+                  <ValueText>{order.sensitive ? 'Sim' : 'Não'}</ValueText>
+              </HorizontalContainer>
+              
+              <HorizontalContainer>
+                <LabelDot></LabelDot>
+                <LabelText>Entregar para: </LabelText>
                 <ValueText>{order.client_name}</ValueText>
               </HorizontalContainer>
-              </View>              
-              <OrderDetailText style={{ fontWeight: 'bold', marginTop: 20 }}>Endereço de entrega</OrderDetailText>
-                <OrderDetailText>{order.address}</OrderDetailText>
-                <MapContainer
-                  initialRegion={{
-                    latitude: order.location.latitude,
-                    longitude: order.location.longitude,
-                    latitudeDelta: 0.0922,
-                    longitudeDelta: 0.0421,
-                  }}
-                >
-                  <Marker
-                    coordinate={{ latitude: order.location.latitude, longitude: order.location.longitude }}
-                  />
-                </MapContainer>
 
-                <ActionContainer>
+              <HorizontalContainer>
+                <LabelDot></LabelDot>
+                <LabelText>Disponibilidade do destinatário: </LabelText>
+                <ValueText>
+                  {order.availability === 'manha'
+                          ? `Manhã (9h-12h)`
+                          : `Tarde (13h-18h)`
+                  }       
+                </ValueText>
+              </HorizontalContainer>
+
+              <HorizontalContainer>
+                <LabelDot></LabelDot>
+                <LabelText>Endereço de entrega: </LabelText>
+                <ValueText>{order.address}</ValueText>
+              </HorizontalContainer>
+            
+              <MapContainer
+                initialRegion={{
+                  latitude: order.location.latitude,
+                  longitude: order.location.longitude,
+                  latitudeDelta: 0.0922,
+                  longitudeDelta: 0.0421,
+                }}
+              >
+                <Marker
+                  coordinate={{ latitude: order.location.latitude, longitude: order.location.longitude }}
+                />
+              </MapContainer>
+
+            <ActionContainer>
               <PopupButton onPress={() => setIsPopupVisible(true)}>
                   <PopupButtonText>Notificar Problema</PopupButtonText>
                 </PopupButton>
