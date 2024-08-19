@@ -9,6 +9,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faRightFromBracket } from '@fortawesome/free-solid-svg-icons/faRightFromBracket';
 import { faHeadset } from '@fortawesome/free-solid-svg-icons/faHeadset';
 import { faUpload } from '@fortawesome/free-solid-svg-icons/faUpload';
+import * as Clipboard from 'expo-clipboard';
 
 import Logo from '@/assets/images/logo/LogoLogin.svg';
 
@@ -50,8 +51,8 @@ export default function Suporte() {
 				<FontAwesomeIcon icon={faHeadset} size={50} style={{marginTop: 10}} />
 				<View>
 					<Text style={[styles.subtitle, {paddingBottom: 10}]}>Central de Atendimento ao Cliente</Text>
-					<Text style={styles.subtitle}>(81) 9 XXXX-XXXX</Text>
-					<Text style={styles.subtitle}>suporte@taentregueapp.com</Text>
+					<Text style={styles.subtitle} onLongPress={() => {Clipboard.setStringAsync('(81) 9 XXXX-XXXX')}}>(81) 9 XXXX-XXXX</Text>
+					<Text style={styles.subtitle} onLongPress={() => {Clipboard.setStringAsync('suporte@taentregueapp.com')}}>suporte@taentregueapp.com</Text>
 				</View>
 			</View>
 			<TouchableOpacity style={styles.button} onPress={() => {router.back()}}>
