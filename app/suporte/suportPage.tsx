@@ -9,11 +9,12 @@ import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faRightFromBracket } from '@fortawesome/free-solid-svg-icons/faRightFromBracket';
 import { faHeadset } from '@fortawesome/free-solid-svg-icons/faHeadset';
 import { faUpload } from '@fortawesome/free-solid-svg-icons/faUpload';
+import * as Clipboard from 'expo-clipboard';
 
 import Logo from '@/assets/images/logo/LogoLogin.svg';
 
 
-export default function Perfil() {
+export default function Suporte() {
   const default_pic = 'https://firebasestorage.googleapis.com/v0/b/entrega-facil-cbb50.appspot.com/o/images%2Fdefault_pic?alt=media&token=11b19c9c-2818-4c6b-8784-12e295b53ec0'
   const [profile_pic_url, setPic] = useState(default_pic)
   const router = useRouter();
@@ -42,80 +43,20 @@ export default function Perfil() {
     fetchData();
   });
 
-  async function handleUpdate() {
-    router.push({
-      pathname: '/register/update',
-      params:  {phone: phone}
-    });
-  }
-
-  async function handleLogout() {
-    try {
-      await AsyncStorage.getAllKeys()
-        .then(keys => AsyncStorage.multiRemove(keys))
-    } catch (e: unknown) {
-      if (e instanceof Error) {
-        alert('Erro ao deslogar usuário: ' + e.message);
-      } else {
-        alert('Erro desconhecido ao deslogar usuário');
-      }
-    }
-    router.dismissAll()
-  }
-
-  async function handleSuporte() {
-    router.push({
-      pathname: '/suporte/suportPage',
-      params:  {}
-    });
-  }
-
-
-  function PerfilData() {
-    return (
-      <View style={{paddingTop: 20}}>
-        <View style={{display:'flex', flexDirection:'row', gap: 20}}>
-          <Image style={styles.circle} resizeMode='cover' src={profile_pic_url} />
-          <View style={{paddingTop: 15}}>
-            <View>
-              <Text style={styles.entry}>Nome</Text>
-              <Text style={styles.title}>{name}</Text>
-            </View>
-            <View style={{paddingTop: 7}}>
-              <Text style={styles.entry}>Email</Text>
-              <Text style={styles.subtitle}>{email}</Text>
-            </View>
-          </View>
-        </View>
-        <View style={{display:'flex', flexDirection:'row', gap: 30, paddingTop: 15, paddingBottom: 10}}>
-          <View>
-            <Text style={styles.entry}>CPF</Text>
-            <Text style={styles.subtitle}>{cpf}</Text>
-          </View>
-          <View>
-            <Text style={styles.entry}>Telefone</Text>
-            <Text style={styles.subtitle}>{phone}</Text>
-          </View>
-        </View>
-      </View>
-    )
-  }
-
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.pagetitle}>Seu Perfil</Text>
-      <PerfilData/>
-      <TouchableOpacity style={styles.button} onPress={handleUpdate}>
-        <FontAwesomeIcon icon={faUpload} size={20}/>
-        <Text style={styles.buttonText}>Atualizar dados</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.button} onPress={handleSuporte}>
-        <FontAwesomeIcon icon={faHeadset} size={20}/>
-        <Text style={styles.buttonText}>Suporte</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.button} onPress={handleLogout}>
-        <FontAwesomeIcon icon={faRightFromBracket} size={20}/>
-        <Text style={styles.buttonText}>Logout</Text>
+      <Text style={styles.pagetitle}>Suporte</Text>
+      <Text style={styles.title}>Contate-nos</Text>
+			<View style={{ display: 'flex', flexDirection: 'row', gap: 20, paddingTop: 30 }}>
+				<FontAwesomeIcon icon={faHeadset} size={50} style={{marginTop: 10}} />
+				<View>
+					<Text style={[styles.subtitle, {paddingBottom: 10}]}>Central de Atendimento ao Cliente</Text>
+					<Text style={styles.subtitle} onLongPress={() => {Clipboard.setStringAsync('(81) 9 XXXX-XXXX')}}>(81) 9 XXXX-XXXX</Text>
+					<Text style={styles.subtitle} onLongPress={() => {Clipboard.setStringAsync('suporte@taentregueapp.com')}}>suporte@taentregueapp.com</Text>
+				</View>
+			</View>
+			<TouchableOpacity style={styles.button} onPress={() => {router.back()}}>
+        <Text style={styles.buttonText}>Voltar</Text>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -130,10 +71,10 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    padding: 16,
+		padding: 16,
+    paddingLeft: 30,
     paddingTop: 50,
     justifyContent: 'flex-start',
-    alignItems: 'center',
     backgroundColor: '#f5f5f5',
   },
   logo: {
@@ -142,7 +83,7 @@ const styles = StyleSheet.create({
     marginBottom: 30, 
   },
   title: {
-    fontSize: 28,
+    fontSize: 21,
     fontWeight: 'bold',
     color: '#000',
     wordWrap: 'breakWord',
@@ -152,7 +93,8 @@ const styles = StyleSheet.create({
     fontSize: 34,
     fontWeight: 'bold',
     color: '#000',
-    marginTop: 20,
+		marginTop: 20,
+		paddingBottom: 15
   },
   entry: {
     color: '#888'
@@ -162,7 +104,6 @@ const styles = StyleSheet.create({
     fontWeight: 'regular',
     color: '#000',
     wordWrap: 'breakWord',
-    width: 140,
   },
   inputContainer: {
     flexDirection: 'row',
