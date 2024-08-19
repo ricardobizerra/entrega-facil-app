@@ -122,6 +122,7 @@ const HistoryTitleText = styled(Text)`
   font-weight: 700;
   margin-bottom: 4px;
   flex-wrap: wrap;
+  max-width: 80%;
 `;
 
 const LogoContainer = styled(View)`
@@ -144,11 +145,11 @@ const ActionDot = styled(View)`
 
 const ActionContainer = styled(View)`
   flex-direction: row;
-  align-items: center;
   flex-wrap: wrap;
-  margin-top: 10px;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
 `;
-
 const TabsContainer = styled(View)`
   flex-direction: row;
   margin-left: 20px;
@@ -157,11 +158,10 @@ const TabsContainer = styled(View)`
 `;
 
 const PopupButton = styled(TouchableOpacity)`
+  margin-left: auto;
   background-color: #4CAF50;
   padding: 10px;
   border-radius: 8px;
-  margin-top: 20px;
-  align-items: center;
 `;
 
 const NotificationOption = styled(TouchableOpacity)`
@@ -842,6 +842,7 @@ export default function History() {
       codeInputRef.current.focus();
     }
   }, []);
+  
 
   return (
     <HistoryContainerBackground>
@@ -885,7 +886,7 @@ export default function History() {
             <HistoryItem>
               {userKind === 'armazenador' ? <OrderIconStorage style={{marginRight: 20}}/> : <OrderIcon style={{marginRight: 20}}/>}
               <View style={{ flex: 1 }}>
-                <HistoryTitleText>Pedido {item.order_name}</HistoryTitleText>
+                <HistoryTitleText numberOfLines={1} ellipsizeMode="tail">Pedido {item.order_name}</HistoryTitleText>
                 <HistoryText>
                   {item.status === 'received'
                       ? `Entregue em ${item.address}`
@@ -931,8 +932,8 @@ export default function History() {
                     <PopupButton
                       style={{
                         position: 'absolute',
-                        bottom: 120,
-                        right: 10, 
+                        bottom: 140,
+                        right: 3, 
                         zIndex: 1, 
                         backgroundColor: 'transparent', 
                         borderWidth: 0,
@@ -1015,13 +1016,19 @@ export default function History() {
                   {incidentDescription.length}/500 caracteres
                 </Text>
 
-                <IncidentFormButton onPress={() => {setIsRedirectOptionVisible(true);
-                   setIsIncidentFormVisible(false); 
-                   setIsPopupVisible(false);}}>
+                <IncidentFormButton onPress={() => {
+                  setIsRedirectOptionVisible(true);
+                  setIsIncidentFormVisible(false);
+                  setIsPopupVisible(false);
+                  setIncidentDescription(''); // Limpa o formulário ao enviar
+                }}>
                   <IncidentFormButtonText>Enviar</IncidentFormButtonText>
                 </IncidentFormButton>
 
-                <PopupCloseButton onPress={() => setIsIncidentFormVisible(false)}>
+                <PopupCloseButton onPress={() => {
+                  setIsIncidentFormVisible(false);
+                  setIncidentDescription(''); // Limpa o formulário ao fechar
+                }}>
                   <PopupCloseButtonText>Fechar</PopupCloseButtonText>
                 </PopupCloseButton>
               </IncidentFormContainer>
