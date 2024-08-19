@@ -11,11 +11,15 @@ import MapView, { Marker } from 'react-native-maps';
 import { FontAwesome } from '@expo/vector-icons';
 
 const MapContainer = styled(MapView)`
-  width: 100%;
+  width: 310px;
   height: 200px;
   margin-top: 20px;
-  border-radius: 25px;
   overflow: hidden;
+  background-color: #fff;
+  shadow-color: #000;
+  shadow-opacity: 0.2;
+  shadow-radius: 5px;
+  elevation: 5;
 `;
 
 const HorizontalContainer = styled(View)`
@@ -325,7 +329,7 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ client_id, kind, product_id, 
   };
 
   return (
-    <OrderDetailContainer>
+    <OrderDetailContainer >
       <BackButtonContainer>
         <TouchableOpacity onPress={handleBack}>
           <Back />
@@ -497,7 +501,7 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ client_id, kind, product_id, 
           </OrderDetailIcon>
         </View>
       ))}
-    </OrderDetailContainer>
+    </OrderDetailContainer >
   );
 }
 

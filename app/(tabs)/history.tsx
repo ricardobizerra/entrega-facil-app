@@ -150,7 +150,7 @@ const ActionContainer = styled(View)`
 
 const TabsContainer = styled(View)`
   flex-direction: row;
-  margin-left: 30px;
+  margin-left: 20px;
   margin-bottom: 10px;
   margin-top: 20px;
 `;

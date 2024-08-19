@@ -6,6 +6,7 @@ import Wave from '@/assets/images/Onda.svg';
 import styled from 'styled-components/native';
 import { database } from '@/config/firebaseConfig';
 import How_use from '@/assets/images/instructions.svg';
+import How2_use from '@/assets/images/How2_use.svg';
 import Actions from '@/assets/images/feedback_e_dicas_2.svg';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { TouchableOpacity, Dimensions } from 'react-native';
@@ -18,6 +19,16 @@ import ATT from '@/assets/images/atualizações.svg'
 import Notification from '@/assets/images/noticias.svg'
 import Back from '@/assets/images/back_button.svg'
 import Ilustration from '@/assets/images/ilustraçoes.svg'
+import Use_background from '@/assets/images/Use_background.svg'
+import Use2_background from '@/assets/images/Use2_background.svg'
+import Frase_1 from '@/assets/images/frase1.svg'
+import Frase_2 from '@/assets/images/frase2.svg'
+import Frase_3 from '@/assets/images/frase3.svg'
+import Frase_4 from '@/assets/images/frase4.svg'
+import Frase_5 from '@/assets/images/frase5.svg'
+import Frase_6 from '@/assets/images/frase6.svg'
+import Frase_7 from '@/assets/images/frase7.svg'
+import WaveStorage from '@/assets/images/wave-storage.svg';
 
 interface User {
   id?: string;
@@ -31,7 +42,7 @@ const CenteredModalContainer = styled(View)`
   flex: 1;
   justify-content: center;
   align-items: center;
-`;
+;`
 
 const NotificationContainer = styled(View)`
   background-color: #ffffff;
@@ -40,7 +51,7 @@ const NotificationContainer = styled(View)`
   border-radius: 20px;
   justify-content: center;
   align-items: center;
-`;
+;`
 
 const ConfirmButton = styled(TouchableOpacity)`
   background-color: #DB3319;
@@ -48,14 +59,14 @@ const ConfirmButton = styled(TouchableOpacity)`
   border-radius: 50px;
   margin-top: 30px;
   width: 70%;
-`;
+;`
 
 const ConfirmButtonText = styled(Text)`
   color: #ffffff;
   font-size: 24px;
   font-weight: 700;
   text-align: center;
-`;
+;`
 
 const MapContainer = styled(MapView)`
   width: 100%;
@@ -67,7 +78,15 @@ const MapContainer = styled(MapView)`
   shadow-opacity: 0.2;
   shadow-radius: 5px;
   elevation: 5;
-`;
+;`
+
+
+interface NewThingsModalProps {
+  isVisible: boolean;
+  onClose: () => void;
+}
+
+
 
 export interface PackageHistoryItem {
   id: string;
@@ -98,6 +117,8 @@ export default function HomeScreen() {
   const [notificationSeen, setNotificationSeen] = useState(false);
   const [searchText, setSearchText] = useState<string>('');
   const [isHowUseVisible, setIsHowUseVisible] = useState(false);
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [userKind, setUserKind] = useState<string | null>(null);
 
   const [user] = useState<User | undefined>({
     name: name as string,
@@ -126,8 +147,10 @@ export default function HomeScreen() {
   const getClientId = async () => {
     try {
       const clientId = await AsyncStorage.getItem('userEmail');
+      const userKind = await AsyncStorage.getItem('kind');
       if (clientId) {
         setClientId(clientId);
+        setUserKind(userKind);
         fetchHistoryFromFirebase(clientId);
       } else {
         console.log('No client ID found');
@@ -192,44 +215,53 @@ export default function HomeScreen() {
     getClientId();
   }, []);
 
-  type NewThingsModalProps = {
-    isVisible: boolean;
-  };
-  
+  const slides = userKind === 'armazenador' ? [
+    { background: <Use2_background />, frase: <Frase_5 /> },
+    { background: <Use2_background />, frase: <Frase_6 /> },
+    { background: <Use2_background />, frase: <Frase_7 /> },
+  ] : [
+    { background: <Use_background />, frase: <Frase_1 /> },
+    { background: <Use_background />, frase: <Frase_2 /> },
+    { background: <Use_background />, frase: <Frase_3 /> },
+    { background: <Use_background />, frase: <Frase_4 /> },
+  ];
 
-  const NewThingsModal: React.FC<NewThingsModalProps> = ({ isVisible }) => (
-    <Modal visible={isVisible} animationType="slide" transparent={true}>
-      <CenteredModalContainer>
-        <NotificationContainer style={{width: Dimensions.get('window').width * 0.8, height: Dimensions.get('window').height * 0.7}}>
-        <TouchableOpacity 
-          style={{ position: 'relative', top: 20, left: 100 }} 
-          onPress={() => setNotificationSeen(true)}
-        >
-          <Exit />
-        </TouchableOpacity>
-          <Illustration />
-          <Text style={{ fontSize: 30, marginTop: 20, fontWeight: 900, textAlign: 'center' }}>Você tem novas{'\n'}solicitações de entrega</Text>
-          <ConfirmButton onPress={() => router.push('/history')} style={{marginBottom: 0}}>
-            <ConfirmButtonText style={{ fontSize: 25, fontWeight: 900, textAlign: 'center' }}>Acessar pedidos</ConfirmButtonText>
-          </ConfirmButton>
-        </NotificationContainer>
-      </CenteredModalContainer>
-    </Modal>
-  );
+  const handleNext = () => {
+    if (currentSlide < slides.length - 1) {
+      setCurrentSlide(currentSlide + 1);
+    }
+  };
+
+  const handlePrevious = () => {
+    if (currentSlide > 0) {
+      setCurrentSlide(currentSlide - 1);
+    }
+  };
 
   return (
     <ScrollView>
       <HomeScreenContainer>
         {/* Cabeçalho */}
         <HeaderContainer>
-          <Alltext>
-            <HeaderText>
-              Olá, <UserName>{user?.name?.split(' ')[0] || ''}</UserName>
-            </HeaderText>
-            <SubtitleText>Essa é sua homepage de entregador.</SubtitleText>
-          </Alltext>
+        <Alltext>
+          {userKind === 'armazenador' ? (
+            <>
+              <HeaderText>
+                Olá, <UserName style={{ color: '#16488D' }}>{user?.name?.split(' ')[0] || ''}</UserName>
+              </HeaderText>
+              <SubtitleText>Essa é Sua Homepage de Armazenador</SubtitleText>
+            </>
+          ) : userKind === 'entregador' ? (
+            <>
+              <HeaderText>
+                Olá, <UserName>{user?.name?.split(' ')[0] || ''}</UserName>
+              </HeaderText>
+              <SubtitleText>Essa é Sua Homepage de Entregador</SubtitleText>
+            </>
+          ) : null}
+        </Alltext>
           <WaveContainer>
-            <Wave />
+            {userKind === 'armazenador' ? <WaveStorage /> : <Wave />}
           </WaveContainer>
         </HeaderContainer>
 
@@ -268,7 +300,7 @@ export default function HomeScreen() {
               onPress={() => setIsHowUseVisible(true)}
               activeOpacity={1}>
               <HowUseContainer>
-                <How_use />
+              {userKind === 'armazenador' ? <How2_use /> : <How_use />}
               </HowUseContainer>
           </TouchableOpacity>
 
@@ -279,25 +311,35 @@ export default function HomeScreen() {
             <Ilustration />
             {/* Adicione mais imagens conforme necessário */}
           </ActionsSection>
-
-          <NewThingsModal isVisible={isModalVisible && !notificationSeen} />
         </Container>
       </HomeScreenContainer>
       <Modal
-          visible={isHowUseVisible}
-          animationType="slide"
-          transparent={true}
-          onRequestClose={() => setIsHowUseVisible(false)}
-        >
-          <ModalContainer>
-            <ModalContent>
+        visible={isHowUseVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setIsHowUseVisible(false)}
+      >
+        <ModalContainer>
+          <ModalContent>
             <CloseButton onPress={() => setIsHowUseVisible(false)}>
               <Back />
             </CloseButton>
-              <Text style={{ fontSize: 24, fontWeight: 'bold', marginBottom: 20 }}>Como usar o Tá Entregue</Text>
-            </ModalContent>
-          </ModalContainer>
-        </Modal>
+
+            <Text style={{ fontSize: 24, fontWeight: 'bold', marginBottom: 20 }}>Como usar o Tá Entregue</Text>
+            {slides[currentSlide].background}
+            {slides[currentSlide].frase}
+
+            <ButtonContainer>
+              <NavigationButton userKind={userKind} onPress={handlePrevious} disabled={currentSlide === 0}>
+                <NavigationButtonText>Anterior</NavigationButtonText>
+              </NavigationButton>
+              <NavigationButton userKind={userKind} onPress={handleNext} disabled={currentSlide === slides.length - 1}>
+                <NavigationButtonText>Próximo</NavigationButtonText>
+              </NavigationButton>
+            </ButtonContainer>
+          </ModalContent>
+        </ModalContainer>
+      </Modal>
     </ScrollView>
   );
 }
@@ -388,8 +430,8 @@ const ActionsSection = styled(ScrollView).attrs({
   contentContainerStyle: {
     paddingHorizontal: 10,
   },
-})`
-  margin-top: 30px;
+})
+ ` margin-top: 30px;
   flex-direction: row;
 `;
 
@@ -398,7 +440,7 @@ const Alltext = styled(View)`
   text-align: left;
   margin-left: 40px;
   flex: 1;
-`;
+;`
 
 const HowUseContainer = styled(View)`
   width: 329px;
@@ -413,7 +455,7 @@ const HowUseContainer = styled(View)`
   shadow-opacity: 0.2;
   shadow-radius: 5px;
   elevation: 5;
-`;
+;`
 
 const ModalContainer = styled(View)`
   flex: 1;
@@ -436,4 +478,26 @@ const CloseButton = styled(TouchableOpacity)`
   align-self: flex-start;
   margin-top: 10px;
   margin-bottom: 10px;
+`;
+
+const ButtonContainer = styled(View)`
+  flex-direction: row;
+  justify-content: space-between;
+  margin-top: 20px;
+  width: 100%;
+`;
+
+const NavigationButton = styled(TouchableOpacity)<{ userKind: string | null }>`
+  background-color: ${({ userKind }) => (userKind === 'armazenador' ? '#16488D' : '#DB3319')};
+  padding: 15px;
+  border-radius: 50px;
+  width: 25%;
+  opacity: ${({ disabled }) => (disabled ? 0.5 : 1)};
+`;
+
+const NavigationButtonText = styled(Text)`
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
 `;
