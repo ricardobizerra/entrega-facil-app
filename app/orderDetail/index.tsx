@@ -403,11 +403,11 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ client_id, kind, product_id, 
                 />
               </MapContainer>
 
-            <ActionContainer>
+            {/*<ActionContainer>
               <PopupButton onPress={() => setIsPopupVisible(true)}>
                   <PopupButtonText>Notificar Problema</PopupButtonText>
                 </PopupButton>
-              </ActionContainer>
+              </ActionContainer>*/}
           </View>
 
           <Modal visible={isPopupVisible} transparent={true} animationType="fade">
