@@ -23,6 +23,7 @@ export default function Root({ children }: PropsWithChildren) {
         <style dangerouslySetInnerHTML={{ __html: responsiveBackground }} />
         {/* Add any additional <head> elements that you want globally available on web... */}
       </head>
+      <script src="https://kit.fontawesome.com/3ef728c7a1.js" crossOrigin="anonymous"></script>
       <body>{children}</body>
     </html>
   );
