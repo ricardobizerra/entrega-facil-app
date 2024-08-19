@@ -1015,7 +1015,9 @@ export default function History() {
                   {incidentDescription.length}/500 caracteres
                 </Text>
 
-                <IncidentFormButton onPress={() => {setIsRedirectOptionVisible(true)}}>
+                <IncidentFormButton onPress={() => {setIsRedirectOptionVisible(true);
+                   setIsIncidentFormVisible(false); 
+                   setIsPopupVisible(false);}}>
                   <IncidentFormButtonText>Enviar</IncidentFormButtonText>
                 </IncidentFormButton>
 
@@ -1039,7 +1041,7 @@ export default function History() {
         <PopupCloseButtonText style = {{borderRadius: 50}}>Continuar com a entrega</PopupCloseButtonText>
       </PopupCloseButton>
         <PopupCloseButton onPress={() => setIsRedirectOptionVisible(false)}
-         style={{ backgroundColor: '#fff', borderRadius: 50 }}
+         style={{ backgroundColor: '#fff', borderRadius: 25 }}
          >
         <PopupCloseButtonText style={{ color: '#DB3319' }}>Cancelar entrega</PopupCloseButtonText>
         </PopupCloseButton>
